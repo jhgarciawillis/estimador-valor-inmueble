@@ -2,7 +2,8 @@ streamlit
 pandas
 numpy
 joblib
-scikit-learn==1.2.2plotly
+scikit-learn==1.2.2
+plotly
 folium
 geopy
 streamlit-folium
