@@ -2,7 +2,8 @@ streamlit
 pandas
 numpy
 joblib
-geopy
-folium
-streamlit-folium
+scikit-learn
 plotly
+folium
+geopy
+streamlit-folium
