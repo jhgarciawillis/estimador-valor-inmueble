@@ -5,10 +5,9 @@ import joblib
 import os
 import math
 import plotly.graph_objects as go
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.cluster import KMeansfrom sklearn import __version__ as sklearn_version
+import sklearn
+from sklearn.cluster import KMeans
+from sklearn import __version__ as sklearn_version
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
 import folium
