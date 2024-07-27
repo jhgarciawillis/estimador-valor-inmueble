@@ -5,6 +5,7 @@ import joblib
 import os
 import math
 import plotly.graph_objects as go
+import scikitlearn as sklearn
 from sklearn import __version__ as sklearn_version
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
