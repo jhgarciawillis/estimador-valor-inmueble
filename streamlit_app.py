@@ -241,7 +241,7 @@ correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com",
 st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
 telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890", help="Ingrese su número de teléfono")
 
-    ## Botón de cálculo
+    # Botón de cálculo
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
     if st.button(texto_boton, key="boton_calcular"):
         logger.debug(f"Botón presionado: {texto_boton}")
@@ -253,7 +253,6 @@ telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890", help
             st.error("Por favor, ingrese un número de teléfono válido.")
         elif latitud and longitud and terreno and construccion and habitaciones and banos:
             logger.debug("Todos los campos requeridos están completos")
-            # Aquí puedes guardar el correo y teléfono en tu base de datos o sistema de almacenamiento
             st.success(f"Detalles de contacto guardados: Correo: {correo}, Teléfono: {telefono}")
             
             datos_procesados = preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos)
@@ -293,7 +292,6 @@ telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890", help
         else:
             logger.warning("Incomplete fields")
             st.error("Por favor, asegúrese de ingresar una dirección válida y completar todos los campos.")
-
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Instrucciones de uso
