@@ -241,57 +241,57 @@ correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com",
 st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
 telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890", help="Ingrese su número de teléfono")
 
-    # Botón de cálculo
-    texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
-    if st.button(texto_boton, key="boton_calcular"):
-        logger.debug(f"Botón presionado: {texto_boton}")
-        if not validar_correo(correo):
-            logger.warning(f"Correo electrónico inválido: {correo}")
-            st.error("Por favor, ingrese una dirección de correo electrónico válida.")
-        elif not validar_telefono(telefono):
-            logger.warning(f"Teléfono inválido: {telefono}")
-            st.error("Por favor, ingrese un número de teléfono válido.")
-        elif latitud and longitud and terreno and construccion and habitaciones and banos:
-            logger.debug("Todos los campos requeridos están completos")
-            st.success(f"Detalles de contacto guardados: Correo: {correo}, Teléfono: {telefono}")
-            
-            datos_procesados = preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos)
-            if datos_procesados is not None:
-                precio, precio_min, precio_max = predecir_precio(datos_procesados, modelos)
-                if precio is not None:
-                    if tipo_propiedad == "Casa":
-                        st.markdown(f"<h3 style='color: #50E3C2;'>Valor Estimado: ${precio:,}</h3>", unsafe_allow_html=True)
-                        st.markdown(f"<p style='color: #B0B0B0;'>Rango de Precio Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"<h3 style='color: #50E3C2;'>Renta Mensual Estimada: ${precio:,}</h3>", unsafe_allow_html=True)
-                        st.markdown(f"<p style='color: #B0B0B0;'>Rango de Renta Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
-
-                    # Gráfico de barras para visualizar el rango de precios
-                    fig = go.Figure(go.Bar(
-                        x=['Precio Mínimo', 'Precio Estimado', 'Precio Máximo'],
-                        y=[precio_min, precio, precio_max],
-                        text=[f'${precio_min:,}', f'${precio:,}', f'${precio_max:,}'],
-                        textposition='auto',
-                        marker_color=['#4A90E2', '#50E3C2', '#4A90E2']
-                    ))
-                    fig.update_layout(
-                        title_text='Rango de Precio Estimado',
-                        font=dict(family="Roboto", color="#FFFFFF"),
-                        paper_bgcolor="#2D2D2D",
-                        plot_bgcolor="#3D3D3D",
-                        xaxis=dict(tickfont=dict(color="#FFFFFF")),
-                        yaxis=dict(tickfont=dict(color="#FFFFFF"))
-                    )
-                    st.plotly_chart(fig)
+# Botón de cálculo
+texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
+if st.button(texto_boton, key="boton_calcular"):
+    logger.debug(f"Botón presionado: {texto_boton}")
+    if not validar_correo(correo):
+        logger.warning(f"Correo electrónico inválido: {correo}")
+        st.error("Por favor, ingrese una dirección de correo electrónico válida.")
+    elif not validar_telefono(telefono):
+        logger.warning(f"Teléfono inválido: {telefono}")
+        st.error("Por favor, ingrese un número de teléfono válido.")
+    elif latitud and longitud and terreno and construccion and habitaciones and banos:
+        logger.debug("Todos los campos requeridos están completos")
+        st.success(f"Detalles de contacto guardados: Correo: {correo}, Teléfono: {telefono}")
+        
+        datos_procesados = preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos)
+        if datos_procesados is not None:
+            precio, precio_min, precio_max = predecir_precio(datos_procesados, modelos)
+            if precio is not None:
+                if tipo_propiedad == "Casa":
+                    st.markdown(f"<h3 style='color: #50E3C2;'>Valor Estimado: ${precio:,}</h3>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='color: #B0B0B0;'>Rango de Precio Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
                 else:
-                    logger.error("Error predicting the price")
-                    st.error("Hubo un error al calcular el precio. Por favor, inténtelo de nuevo.")
+                    st.markdown(f"<h3 style='color: #50E3C2;'>Renta Mensual Estimada: ${precio:,}</h3>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='color: #B0B0B0;'>Rango de Renta Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
+
+                # Gráfico de barras para visualizar el rango de precios
+                fig = go.Figure(go.Bar(
+                    x=['Precio Mínimo', 'Precio Estimado', 'Precio Máximo'],
+                    y=[precio_min, precio, precio_max],
+                    text=[f'${precio_min:,}', f'${precio:,}', f'${precio_max:,}'],
+                    textposition='auto',
+                    marker_color=['#4A90E2', '#50E3C2', '#4A90E2']
+                ))
+                fig.update_layout(
+                    title_text='Rango de Precio Estimado',
+                    font=dict(family="Roboto", color="#FFFFFF"),
+                    paper_bgcolor="#2D2D2D",
+                    plot_bgcolor="#3D3D3D",
+                    xaxis=dict(tickfont=dict(color="#FFFFFF")),
+                    yaxis=dict(tickfont=dict(color="#FFFFFF"))
+                )
+                st.plotly_chart(fig)
             else:
-                logger.error("Error preprocessing the data")
-                st.error("Hubo un error al procesar los datos. Por favor, inténtelo de nuevo.")
+                logger.error("Error predicting the price")
+                st.error("Hubo un error al calcular el precio. Por favor, inténtelo de nuevo.")
         else:
-            logger.warning("Incomplete fields")
-            st.error("Por favor, asegúrese de ingresar una dirección válida y completar todos los campos.")
+            logger.error("Error preprocessing the data")
+            st.error("Hubo un error al procesar los datos. Por favor, inténtelo de nuevo.")
+    else:
+        logger.warning("Incomplete fields")
+        st.error("Por favor, asegúrese de ingresar una dirección válida y completar todos los campos.")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Instrucciones de uso
