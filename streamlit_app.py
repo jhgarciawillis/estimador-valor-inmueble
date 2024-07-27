@@ -5,7 +5,7 @@ import joblib
 import os
 import math
 import plotly.graph_objects as go
-import scikitlearn as sklearn
+from sklearn import __version__ as sklearn_version
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
 import folium
@@ -266,7 +266,7 @@ with st.container():
             logger.debug("Todos los campos requeridos están completos")
             # Aquí puedes guardar el correo y teléfono en tu base de datos o sistema de almacenamiento
             st.success(f"Detalles de contacto guardados: Correo: {correo}, Teléfono: {telefono}")
-
+            
             datos_procesados = preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos)
             if datos_procesados is not None:
                 precio, precio_min, precio_max = predecir_precio(datos_procesados, modelos)
