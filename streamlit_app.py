@@ -241,7 +241,7 @@ correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com",
 st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
 telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890", help="Ingrese su número de teléfono")
 
-    # Botón de cálculo
+    ## Botón de cálculo
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
     if st.button(texto_boton, key="boton_calcular"):
         logger.debug(f"Botón presionado: {texto_boton}")
