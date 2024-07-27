@@ -47,6 +47,7 @@ st.markdown("""
         border: 1px solid #4A4A4A;
         border-radius: 4px;
         padding: 8px 10px;
+        max-width: 200px;
     }
     .stButton > button {
         width: 100%;
@@ -62,6 +63,12 @@ st.markdown("""
         font-size: 14px;
         color: #B0B0B0;
         margin-bottom: 5px;
+    }
+    .folium-map {
+        width: 100%;
+        height: 300px;
+        max-width: 600px;
+        margin: 0 auto;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -190,14 +197,14 @@ with st.container():
 
     # Tipo de propiedad
     st.markdown('<div class="etiqueta-entrada">Tipo de Propiedad</div>', unsafe_allow_html=True)
-    tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad")
+    tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad", help="Seleccione el tipo de propiedad")
 
     # Cargar modelos basados en el tipo de propiedad
     modelos = cargar_modelos(tipo_propiedad)
 
     # Dirección de la propiedad
     st.markdown('<div class="etiqueta-entrada">Dirección de la Propiedad</div>', unsafe_allow_html=True)
-    entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
+    entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México", help="Ingrese la dirección completa de la propiedad")
 
     latitud, longitud = None, None
 
@@ -206,7 +213,7 @@ with st.container():
         sugerencias = obtener_sugerencias_direccion(entrada_direccion)
         if sugerencias:
             st.markdown('<div class="etiqueta-entrada">Dirección Sugerida</div>', unsafe_allow_html=True)
-            direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida")
+            direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida", help="Seleccione la dirección correcta de las sugerencias")
             if direccion_seleccionada:
                 latitud, longitud, ubicacion = geocodificar_direccion(direccion_seleccionada)
                 if latitud and longitud:
@@ -216,7 +223,7 @@ with st.container():
                     # Crear y mostrar el mapa responsivo
                     m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
                     folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
-                    folium_static(m)
+                    folium_static(m, width=300, height=200)
                 else:
                     logger.warning("No se pudo geocodificar la dirección seleccionada")
                     st.error("No se pudo geocodificar la dirección seleccionada.")
@@ -226,24 +233,24 @@ with st.container():
 
     with col1:
         st.markdown('<div class="etiqueta-entrada">Terreno (m²)</div>', unsafe_allow_html=True)
-        terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno")
+        terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno", help="Área total del terreno en metros cuadrados")
 
-        st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
-        habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones")
+        st.markdown('<div class="etiqueta-entrada">Construcción (m²)</div>', unsafe_allow_html=True)
+        construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion", help="Área construida en metros cuadrados")
 
     with col2:
-        st.markdown('<div class="etiqueta-entrada">Construcción (m²)</div>', unsafe_allow_html=True)
-        construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion")
+        st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
+        habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones", help="Número de habitaciones")
 
         st.markdown('<div class="etiqueta-entrada">Baños</div>', unsafe_allow_html=True)
-        banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
+        banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos", help="Número de baños (use decimales para medios baños)")
 
     # Campos de correo electrónico y teléfono
     st.markdown('<div class="etiqueta-entrada">Correo Electrónico</div>', unsafe_allow_html=True)
-    correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com")
+    correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com", help="Ingrese su dirección de correo electrónico")
 
     st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
-    telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
+    telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890", help="Ingrese su número de teléfono")
         
     # Botón de cálculo
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
@@ -259,7 +266,7 @@ with st.container():
             logger.debug("Todos los campos requeridos están completos")
             # Aquí puedes guardar el correo y teléfono en tu base de datos o sistema de almacenamiento
             st.success(f"Detalles de contacto guardados: Correo: {correo}, Teléfono: {telefono}")
-            
+
             datos_procesados = preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos)
             if datos_procesados is not None:
                 precio, precio_min, precio_max = predecir_precio(datos_procesados, modelos)
