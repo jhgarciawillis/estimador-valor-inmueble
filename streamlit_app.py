@@ -104,14 +104,14 @@ st.markdown(f"""
         width: 0%;
         padding-top: 0%; /* This creates a 1:1 aspect ratio */
         position: relative;
-        margin: 20px auto; /* Center the map */
+        margin: 0px auto; /* Center the map */
     }}
     .map-container .folium-map {{
         position: absolute;
         top: 0;
         left: 0;
         bottom: 0;
-        right: 0;
+        right: 50px;
     }}
     .tooltip {{
         position: relative;
