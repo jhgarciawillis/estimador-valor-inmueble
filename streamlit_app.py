@@ -30,33 +30,33 @@ INPUT_BACKGROUND = "#272731"  # New input background color
 # CSS personalizado
 st.markdown(f"""
 <style>
-    body {{
+    body {
         color: {TEXT_COLOR};
         background-color: {BACKGROUND_COLOR};
         font-family: 'Nunito', sans-serif;
-    }}
-    .stApp {{
+    }
+    .stApp {
         max-width: 800px;
         margin: 0 auto;
         padding: 20px;
-    }}
+    }
 
     .stTextInput > div > div > input,
     .stSelectbox > div > div > select,
-    .stNumberInput > div > div > input {{
+    .stNumberInput > div > div > input {
         color: {TEXT_COLOR};
         background-color: {INPUT_BACKGROUND};
         border: 1px solid #272731;
         border-radius: 4px;
         padding: 8px 10px;
-    }}
+    }
     .stTextInput > div > div > input:focus,
     .stSelectbox > div > div > select:focus,
-    .stNumberInput > div > div > input:focus {{
+    .stNumberInput > div > div > input:focus {
         border-color: {SECONDARY_COLOR};
         box-shadow: 0 0 0 1px {SECONDARY_COLOR};
-    }}
-    .stButton > button {{
+    }
+    .stButton > button {
         width: 100%;
         background-color: {PRIMARY_COLOR};
         color: white;
@@ -65,59 +65,60 @@ st.markdown(f"""
         padding: 10px 15px;
         border-radius: 5px;
         transition: background-color 0.3s;
-    }}
-    .stButton > button:hover {{
+    }
+    .stButton > button:hover {
         background-color: {SECONDARY_COLOR};
         color: {PRIMARY_COLOR};
-    }}
-    .title-banner {{
+    }
+    .title-banner {
         background-color: {PRIMARY_COLOR};
         color: {TEXT_COLOR};
         padding: 20px;
         border-radius: 5px;
         text-align: center;
         margin-bottom: 20px;
-    }}
-    .title-banner h1 {{
+    }
+    .title-banner h1 {
         color: {TEXT_COLOR};
         font-size: 28px;
         font-weight: bold;
         margin: 0;
-    }}
-    .etiqueta-entrada {{
+    }
+    .etiqueta-entrada {
         font-size: 14px;
         color: {TEXT_COLOR};
         margin-bottom: 5px;
         font-weight: bold;
         display: flex;
         align-items: center;
-    }}
-    .etiqueta-entrada .tooltip {{
+    }
+    .etiqueta-entrada .tooltip {
         margin-left: 5px;
         cursor: help;
-    }}
-    .stExpander {{
+    }
+    .stExpander {
         border: 1px solid {SECONDARY_COLOR};
         border-radius: 5px;
-    }}
-    .map-container {{
-        width: 0%;
-        padding-top: 0%; /* This creates a 1:1 aspect ratio */
+    }
+    .map-container {
+        width: 30%;  /* Reduced from 100% to 30% */
+        padding-top: 30%; /* Reduced from 100% to 30% to maintain aspect ratio */
         position: relative;
-        margin: 0px auto; /* Center the map */
-    }}
-    .map-container .folium-map {{
+        margin: 20px auto; /* Center the map and add some vertical margin */
+    }
+    .map-container .folium-map {
         position: absolute;
         top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-    }}
-    .tooltip {{
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        height: 100%;
+    }
+    .tooltip {
         position: relative;
         display: inline-block;
-    }}
-    .tooltip .tooltiptext {{
+    }
+    .tooltip .tooltiptext {
         visibility: hidden;
         width: 200px;
         background-color: {PRIMARY_COLOR};
@@ -132,11 +133,11 @@ st.markdown(f"""
         margin-left: -100px;
         opacity: 0;
         transition: opacity 0.3s;
-    }}
-    .tooltip:hover .tooltiptext {{
+    }
+    .tooltip:hover .tooltiptext {
         visibility: visible;
         opacity: 1;
-    }}
+    }
 </style>
 """, unsafe_allow_html=True)
 
