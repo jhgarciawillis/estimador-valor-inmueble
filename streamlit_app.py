@@ -32,14 +32,20 @@ logger = logging.getLogger(__name__)
 @st.cache_resource
 def get_mongo_client():
     try:
+        logger.debug("Connecting to MongoDB...")
         client = MongoClient(
             st.secrets["mongo"]["connection_string"],
             server_api=ServerApi('1'),
-            tlsCAFile=certifi.where()
+            tlsCAFile=certifi.where(),
+            ssl_cert_reqs=ssl.CERT_NONE  # Add this line
         )
+        logger.debug("MongoDB connection established")
+        
         # Send a ping to confirm a successful connection
+        logger.debug("Sending ping to MongoDB")
         client.admin.command('ping')
         logger.info("Successfully connected to MongoDB!")
+        
         return client
     except Exception as e:
         logger.error(f"Error de configuración de MongoDB: {str(e)}")
