@@ -101,12 +101,18 @@ st.markdown(f"""
         border-radius: 5px;
     }}
 
+    .map-container {{
+        width: 100%;
+        height: 300px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        border: 1px solid {SECONDARY_COLOR};
+        border-radius: 5px;
+        overflow: hidden;
+    }}
     .map-container .folium-map {{
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
+        width: 100%;
+        height: 100%;
     }}
     .tooltip {{
         position: relative;
@@ -307,7 +313,7 @@ with st.container():
             st.success(f"Ubicación encontrada: {st.session_state.direccion_seleccionada}")
             logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
             
-            # Crear y mostrar el mapa responsivo
+            # Crear y mostrar el mapa en un contenedor más pequeño
             m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
             folium.Marker([latitud, longitud], popup=st.session_state.direccion_seleccionada).add_to(m)
             st.markdown('<div class="map-container">', unsafe_allow_html=True)
