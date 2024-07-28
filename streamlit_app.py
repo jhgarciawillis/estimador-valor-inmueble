@@ -25,7 +25,7 @@ SECONDARY_COLOR = "#FFD700"  # Gold
 BACKGROUND_COLOR = "#1E1E1E"  # Dark background
 TEXT_COLOR = "#FFFFFF"  # White text
 ACCENT_COLOR = "#4CAF50"  # Green
-INPUT_BACKGROUND = "#272731"  # New input background color
+INPUT_BACKGROUND = "#1E1E1E"  # New input background color
 
 # CSS personalizado
 st.markdown(f"""
