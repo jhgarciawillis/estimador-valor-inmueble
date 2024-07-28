@@ -20,6 +20,7 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import json
 from pymongo import MongoClient
+from pymongo.errors import ConfigurationError
 
 # Configurar registro
 logging.basicConfig(level=logging.DEBUG)
@@ -28,7 +29,11 @@ logger = logging.getLogger(__name__)
 # MongoDB connection
 @st.cache_resource
 def get_mongo_client():
-    return MongoClient(st.secrets["mongo"]["connection_string"])
+    try:
+        return MongoClient(st.secrets["mongo"]["connection_string"])
+    except ConfigurationError as e:
+        logger.error(f"Error de configuración de MongoDB: {str(e)}")
+        return None
 
 # Encryption setup
 fernet = Fernet(st.secrets["encryption"]["key"].encode())
@@ -41,18 +46,34 @@ def decrypt_data(encrypted_data):
 
 def store_data(data):
     encrypted_data = encrypt_data(data)
-    with get_mongo_client() as client:
-        db = client.property_database
-        collection = db.property_data
-        collection.insert_one({"timestamp": datetime.now().isoformat(), "data": encrypted_data})
-    logger.debug("Data stored successfully")
+    client = get_mongo_client()
+    if client:
+        try:
+            db = client.property_database
+            collection = db.property_data
+            collection.insert_one({"timestamp": datetime.now().isoformat(), "data": encrypted_data})
+            logger.debug("Data stored successfully")
+        except Exception as e:
+            logger.error(f"Error al almacenar datos: {str(e)}")
+        finally:
+            client.close()
+    else:
+        logger.error("No se pudo conectar a MongoDB")
 
 def retrieve_data():
-    with get_mongo_client() as client:
-        db = client.property_database
-        collection = db.property_data
-        for doc in collection.find():
-            yield doc['timestamp'], decrypt_data(doc['data'])
+    client = get_mongo_client()
+    if client:
+        try:
+            db = client.property_database
+            collection = db.property_data
+            for doc in collection.find():
+                yield doc['timestamp'], decrypt_data(doc['data'])
+        except Exception as e:
+            logger.error(f"Error al recuperar datos: {str(e)}")
+        finally:
+            client.close()
+    else:
+        logger.error("No se pudo conectar a MongoDB")
 
 # Configuración de la página
 st.set_page_config(page_title="Estimador de Valor de Propiedades", layout="wide")
@@ -326,7 +347,12 @@ with st.container():
                     }
 
                     # Store data
-                    store_data(data_to_store)
+                    try:
+                        store_data(data_to_store)
+                        logger.info("Datos almacenados exitosamente")
+                    except Exception as e:
+                        logger.error(f"Error al almacenar datos: {str(e)}")
+                        # No mostramos el error al usuario para mantener la experiencia sin problemas
 
                     # Gráfico de barras para visualizar el rango de precios
                     fig = go.Figure(go.Bar(
