@@ -70,11 +70,15 @@ def store_data(data):
         try:
             db = client.property_database
             collection = db.property_data
-            collection.insert_one({"timestamp": datetime.now().isoformat(), "data": encrypted_data})
+            logger.debug(f"Inserting data into MongoDB: {encrypted_data}")
+            result = collection.insert_one({"timestamp": datetime.now().isoformat(), "data": encrypted_data})
+            logger.debug(f"Inserted document ID: {result.inserted_id}")
             logger.info("Data stored successfully")
         except Exception as e:
             logger.error(f"Error al almacenar datos: {str(e)}")
+            logger.exception("Detailed exception:")
         finally:
+            logger.debug("Closing MongoDB connection")
             client.close()
     else:
         logger.error("No se pudo conectar a MongoDB. Los datos no se almacenaron.")
