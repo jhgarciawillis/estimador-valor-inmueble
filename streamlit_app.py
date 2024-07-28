@@ -100,19 +100,13 @@ st.markdown(f"""
         border: 1px solid {SECONDARY_COLOR};
         border-radius: 5px;
     }}
-    .map-container {{
-        width: 30%;
-        padding-top: 30%;
-        position: relative;
-        margin: 20px auto;
-    }}
+
     .map-container .folium-map {{
         position: absolute;
         top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        height: 100%;
+        left: 0;
+        bottom: 0;
+        right: 0;
     }}
     .tooltip {{
         position: relative;
