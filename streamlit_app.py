@@ -36,8 +36,7 @@ def get_mongo_client():
         client = MongoClient(
             st.secrets["mongo"]["connection_string"],
             server_api=ServerApi('1'),
-            tlsCAFile=certifi.where(),
-            ssl_cert_reqs=ssl.CERT_NONE  # Add this line
+            tlsCAFile=certifi.where()
         )
         logger.debug("MongoDB connection established")
         
