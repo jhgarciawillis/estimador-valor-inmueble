@@ -227,13 +227,13 @@ with st.container():
         st.markdown('<div class="etiqueta-entrada">Terreno (m²)</div>', unsafe_allow_html=True)
         terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno")
 
-        st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
-        habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones")
-
-    with col2:
         st.markdown('<div class="etiqueta-entrada">Construcción (m²)</div>', unsafe_allow_html=True)
         construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion")
 
+    with col2:
+        st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
+        habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones")
+        
         st.markdown('<div class="etiqueta-entrada">Baños</div>', unsafe_allow_html=True)
         banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
 
