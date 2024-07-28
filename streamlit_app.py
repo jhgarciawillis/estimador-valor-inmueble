@@ -21,6 +21,7 @@ from cryptography.fernet import Fernet
 import json
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
+import certifi
 
 # Configurar registro
 logging.basicConfig(level=logging.DEBUG)
@@ -30,7 +31,11 @@ logger = logging.getLogger(__name__)
 @st.cache_resource
 def get_mongo_client():
     try:
-        client = MongoClient(st.secrets["mongo"]["connection_string"], server_api=ServerApi('1'))
+        client = MongoClient(
+            st.secrets["mongo"]["connection_string"],
+            server_api=ServerApi('1'),
+            tlsCAFile=certifi.where()
+        )
         # Send a ping to confirm a successful connection
         client.admin.command('ping')
         logger.info("Successfully connected to MongoDB!")
@@ -64,13 +69,13 @@ def store_data(data):
             db = client.property_database
             collection = db.property_data
             collection.insert_one({"timestamp": datetime.now().isoformat(), "data": encrypted_data})
-            logger.debug("Data stored successfully")
+            logger.info("Data stored successfully")
         except Exception as e:
             logger.error(f"Error al almacenar datos: {str(e)}")
         finally:
             client.close()
     else:
-        logger.error("No se pudo conectar a MongoDB")
+        logger.error("No se pudo conectar a MongoDB. Los datos no se almacenaron.")
 
 def retrieve_data():
     client = get_mongo_client()
@@ -255,7 +260,6 @@ def validar_telefono(telefono):
 
 # Interfaz de usuario
 st.title("Estimador de Valor de Propiedades")
-
 # Contenedor principal
 with st.container():
     st.markdown('<div class="widget-container">', unsafe_allow_html=True)
