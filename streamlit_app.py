@@ -282,13 +282,17 @@ with st.container():
         st.markdown('<div class="etiqueta-entrada">Nombre</div>', unsafe_allow_html=True)
         nombre = st.text_input("", key="nombre", placeholder="Ingrese su nombre")
 
+    with col2:
         st.markdown('<div class="etiqueta-entrada">Apellido</div>', unsafe_allow_html=True)
         apellido = st.text_input("", key="apellido", placeholder="Ingrese su apellido")
 
-    with col2:
+    col1, col2 = st.columns(2)
+
+    with col1:
         st.markdown('<div class="etiqueta-entrada">Correo Electrónico</div>', unsafe_allow_html=True)
         correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com")
 
+    with col2:
         st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
         telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
         
