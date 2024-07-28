@@ -94,6 +94,18 @@ st.markdown(f"""
         border: 1px solid {SECONDARY_COLOR};
         border-radius: 5px;
     }}
+    .map-container {{
+        width: 100%;
+        padding-top: 100%; /* This creates a 1:1 aspect ratio */
+        position: relative;
+    }}
+    .map-container .folium-map {{
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -251,7 +263,9 @@ with st.container():
             # Crear y mostrar el mapa responsivo
             m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
             folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
-            folium_static(m)
+            st.markdown('<div class="map-container">', unsafe_allow_html=True)
+            folium_static(m, width='100%', height='100%')
+            st.markdown('</div>', unsafe_allow_html=True)
         else:
             logger.warning("No se pudo geocodificar la dirección seleccionada")
             st.error("No se pudo geocodificar la dirección seleccionada.")
@@ -348,8 +362,6 @@ with st.container():
         else:
             logger.warning("Incomplete fields")
             st.error("Por favor, asegúrese de ingresar una dirección válida y completar todos los campos.")
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # Instrucciones de uso
 with st.expander("Instrucciones de Uso"):
