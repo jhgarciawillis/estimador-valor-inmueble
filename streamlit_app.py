@@ -155,7 +155,7 @@ def predecir_precio(datos_procesados, modelos):
     try:
         precio_bruto = modelos['modelo'].predict(datos_procesados)[0]
         precio_ajustado = precio_bruto
-        precio_redondeado = math.floor((precio_ajustado * .77) / 1000) * 1000
+        precio_redondeado = math.floor((precio_ajustado * .63) / 1000) * 1000
 
         factor_escala_bajo = math.exp(-0.05)
         factor_escala_alto = math.exp(0.01 * math.log(precio_redondeado / 1000 + 1))
@@ -233,7 +233,7 @@ with st.container():
     with col2:
         st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
         habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones")
-        
+
         st.markdown('<div class="etiqueta-entrada">Baños</div>', unsafe_allow_html=True)
         banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
 
