@@ -12,11 +12,11 @@ from streamlit_folium import folium_static
 import re
 import logging
 
-# Configure logging
+# Configurar registro
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Page configuration
+# Configuración de la página
 st.set_page_config(page_title="Estimador de Valor de Propiedades", layout="wide")
 
 # Color palette for real estate agency
@@ -27,17 +27,91 @@ TEXT_COLOR = "#FFFFFF"  # White text
 ACCENT_COLOR = "#4CAF50"  # Green
 INPUT_BACKGROUND = "#272731"  # New input background color
 
-# Custom CSS
+# CSS personalizado
 st.markdown(f"""
 <style>
-    /* ... (CSS styles remain unchanged) ... */
+    body {{
+        color: {TEXT_COLOR};
+        background-color: {BACKGROUND_COLOR};
+        font-family: 'Nunito', sans-serif;
+    }}
+    .stApp {{
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 20px;
+    }}
+
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div > select,
+    .stNumberInput > div > div > input {{
+        color: {TEXT_COLOR};
+        background-color: {INPUT_BACKGROUND};
+        border: 1px solid #272731;
+        border-radius: 4px;
+        padding: 8px 10px;
+    }}
+    .stTextInput > div > div > input:focus,
+    .stSelectbox > div > div > select:focus,
+    .stNumberInput > div > div > input:focus {{
+        border-color: {SECONDARY_COLOR};
+        box-shadow: 0 0 0 1px {SECONDARY_COLOR};
+    }}
+    .stButton > button {{
+        width: 100%;
+        background-color: {PRIMARY_COLOR};
+        color: white;
+        font-weight: bold;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }}
+    .stButton > button:hover {{
+        background-color: {SECONDARY_COLOR};
+        color: {PRIMARY_COLOR};
+    }}
+    .title-banner {{
+        background-color: {PRIMARY_COLOR};
+        color: {TEXT_COLOR};
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+        margin-bottom: 20px;
+    }}
+    .title-banner h1 {{
+        color: {TEXT_COLOR};
+        font-size: 28px;
+        font-weight: bold;
+        margin: 0;
+    }}
+    .etiqueta-entrada {{
+        font-size: 14px;
+        color: {TEXT_COLOR};
+        margin-bottom: 5px;
+        font-weight: bold;
+    }}
+    .stExpander {{
+        border: 1px solid {SECONDARY_COLOR};
+        border-radius: 5px;
+    }}
+    .map-container {{
+        width: 100%;
+        padding-top: 100%; /* This creates a 1:1 aspect ratio */
+        position: relative;
+    }}
+    .map-container .folium-map {{
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
-# Load models and tools
+# Cargar modelos y herramientas
 @st.cache_resource
 def cargar_modelos(tipo_propiedad):
-    # Load machine learning models based on property type
     directorio_actual = os.path.dirname(os.path.abspath(__file__))
     prefijo = "renta_" if tipo_propiedad == "Departamento" else ""
     logger.debug(f"Cargando modelos para {tipo_propiedad} con prefijo: {prefijo}")
@@ -62,11 +136,10 @@ def cargar_modelos(tipo_propiedad):
         st.error(f"Error al cargar los modelos: {str(e)}. Por favor contacte al soporte.")
     return modelos
 
-# Initialize geocoder
+# Inicializar geocodificador
 geolocalizador = Nominatim(user_agent="aplicacion_propiedades")
 
 def geocodificar_direccion(direccion):
-    # Geocode an address to get latitude and longitude
     logger.debug(f"Intentando geocodificar dirección: {direccion}")
     try:
         ubicacion = geolocalizador.geocode(direccion)
@@ -78,7 +151,6 @@ def geocodificar_direccion(direccion):
     return None, None, None
 
 def obtener_sugerencias_direccion(consulta):
-    # Get address suggestions based on user input
     logger.debug(f"Obteniendo sugerencias para: {consulta}")
     try:
         ubicaciones = geolocalizador.geocode(consulta + ", México", exactly_one=False, limit=5)
@@ -90,7 +162,6 @@ def obtener_sugerencias_direccion(consulta):
     return []
 
 def agregar_caracteristica_grupo(latitud, longitud, modelos):
-    # Add group characteristic based on latitude and longitude
     logger.debug(f"Agregando característica de grupo para: {latitud}, {longitud}")
     try:
         grupo = modelos['agrupamiento'].predict(pd.DataFrame({'Latitud': [latitud], 'Longitud': [longitud]}))[0]
@@ -101,7 +172,6 @@ def agregar_caracteristica_grupo(latitud, longitud, modelos):
         return None
 
 def preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos):
-    # Preprocess input data for model prediction
     logger.debug("Preprocesando datos")
     try:
         grupo_ubicacion = agregar_caracteristica_grupo(latitud, longitud, modelos)
@@ -125,7 +195,6 @@ def preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, ba
         return None
 
 def predecir_precio(datos_procesados, modelos):
-    # Predict property price or rent
     logger.debug("Prediciendo precio")
     try:
         precio_bruto = modelos['modelo'].predict(datos_procesados)[0]
@@ -148,12 +217,10 @@ def predecir_precio(datos_procesados, modelos):
         return None, None, None
 
 def validar_correo(correo):
-    # Validate email format
     patron = r'^[\w\.-]+@[\w\.-]+\.\w+$'
     return re.match(patron, correo) is not None
 
 def validar_telefono(telefono):
-    # Validate phone number format
     patron = r'^\+?[1-9]\d{1,14}$'
     return re.match(patron, telefono) is not None
 
