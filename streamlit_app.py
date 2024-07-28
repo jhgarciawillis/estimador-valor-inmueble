@@ -277,6 +277,8 @@ if 'sugerencias' not in st.session_state:
     st.session_state.sugerencias = []
 if 'direccion_seleccionada' not in st.session_state:
     st.session_state.direccion_seleccionada = ""
+if 'mostrar_mapa' not in st.session_state:
+    st.session_state.mostrar_mapa = False
 
 # Interfaz de usuario
 st.markdown('<div class="title-banner"><h1>Estimador de Valor de Propiedades</h1></div>', unsafe_allow_html=True)
@@ -307,12 +309,18 @@ with st.container():
             st.success(f"Ubicación encontrada: {st.session_state.direccion_seleccionada}")
             logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
             
-            # Crear y mostrar el mapa responsivo
-            m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
-            folium.Marker([latitud, longitud], popup=st.session_state.direccion_seleccionada).add_to(m)
-            st.markdown('<div class="map-container">', unsafe_allow_html=True)
-            folium_static(m)
-            st.markdown('</div>', unsafe_allow_html=True)
+            # Botón para mostrar/ocultar el mapa
+            if st.button("Mostrar/Ocultar Mapa"):
+                st.session_state.mostrar_mapa = not st.session_state.mostrar_mapa
+
+            # Mostrar el mapa solo si el botón ha sido presionado
+            if st.session_state.mostrar_mapa:
+                # Crear y mostrar el mapa responsivo
+                m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
+                folium.Marker([latitud, longitud], popup=st.session_state.direccion_seleccionada).add_to(m)
+                st.markdown('<div class="map-container">', unsafe_allow_html=True)
+                folium_static(m)
+                st.markdown('</div>', unsafe_allow_html=True)
         else:
             logger.warning("No se pudo geocodificar la dirección seleccionada")
             st.error("No se pudo geocodificar la dirección seleccionada.")
@@ -356,7 +364,7 @@ with st.container():
     with col2:
         st.markdown(create_tooltip("Teléfono", "Ingrese su número de teléfono."), unsafe_allow_html=True)
         telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
-        
+
     # Botón de cálculo
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
     if st.button(texto_boton, key="boton_calcular"):
