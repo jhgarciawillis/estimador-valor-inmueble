@@ -36,7 +36,7 @@ st.markdown(f"""
         font-family: 'Nunito', sans-serif;
     }}
     .stApp {{
-        max-width: 800px;
+        max-width: 700px;
         margin: 0 auto;
         padding: 20px;
     }}
@@ -269,15 +269,23 @@ def validar_telefono(telefono):
 # Callback function for address input
 def on_address_change():
     st.session_state.sugerencias = obtener_sugerencias_direccion(st.session_state.entrada_direccion)
+    if st.session_state.sugerencias:
+        st.session_state.direccion_seleccionada = st.session_state.sugerencias[0]
+    else:
+        st.session_state.direccion_seleccionada = ""
 
 # Initialize session state variables
 if 'entrada_direccion' not in st.session_state:
     st.session_state.entrada_direccion = ""
 if 'sugerencias' not in st.session_state:
     st.session_state.sugerencias = []
+if 'direccion_seleccionada' not in st.session_state:
+    st.session_state.direccion_seleccionada = ""
 
 # Interfaz de usuario
 st.markdown('<div class="title-banner"><h1>Estimador de Valor de Propiedades</h1></div>', unsafe_allow_html=True)
+
+# Continuing from where we left off...
 
 # Contenedor principal
 with st.container():
@@ -297,21 +305,17 @@ with st.container():
         st.markdown(create_tooltip("Dirección de la Propiedad", "Ingrese la dirección completa de la propiedad."), unsafe_allow_html=True)
         st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México", on_change=on_address_change)
 
-        if st.session_state.sugerencias:
-            st.markdown(create_tooltip("Dirección Sugerida", "Seleccione la dirección correcta de las sugerencias."), unsafe_allow_html=True)
-            direccion_seleccionada = st.selectbox("", st.session_state.sugerencias, index=0, key="direccion_sugerida")
-
     # Geocodificación y mapa
     latitud, longitud = None, None
-    if 'direccion_seleccionada' in locals():
-        latitud, longitud, ubicacion = geocodificar_direccion(direccion_seleccionada)
+    if st.session_state.direccion_seleccionada:
+        latitud, longitud, ubicacion = geocodificar_direccion(st.session_state.direccion_seleccionada)
         if latitud and longitud:
-            st.success(f"Ubicación encontrada: {direccion_seleccionada}")
+            st.success(f"Ubicación encontrada: {st.session_state.direccion_seleccionada}")
             logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
             
             # Crear y mostrar el mapa responsivo
             m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
-            folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
+            folium.Marker([latitud, longitud], popup=st.session_state.direccion_seleccionada).add_to(m)
             folium_static(m)
         else:
             logger.warning("No se pudo geocodificar la dirección seleccionada")
@@ -416,7 +420,7 @@ with st.container():
 with st.expander("Instrucciones de Uso"):
     st.markdown("""
     1. Seleccione el tipo de propiedad: Casa (en venta) o Departamento (en alquiler).
-    2. Ingrese la dirección completa de la propiedad y seleccione la sugerencia correcta.
+    2. Ingrese la dirección completa de la propiedad. La aplicación buscará automáticamente la ubicación.
     3. Verifique la ubicación en el mapa mostrado.
     4. Proporcione el área del terreno y el área construida en metros cuadrados.
     5. Indique el número de habitaciones y baños (puede usar decimales para baños, por ejemplo, 2.5 para dos baños completos y un medio baño).
