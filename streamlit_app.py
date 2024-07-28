@@ -35,8 +35,7 @@ def get_mongo_client():
         client = MongoClient(
             st.secrets["mongo"]["connection_string"],
             server_api=ServerApi('1'),
-            tlsCAFile=certifi.where(),
-            ssl_cert_reqs=ssl.CERT_NONE  # This line disables certificate verification
+            tlsCAFile=certifi.where()
         )
         # Send a ping to confirm a successful connection
         client.admin.command('ping')
@@ -44,7 +43,7 @@ def get_mongo_client():
         return client
     except Exception as e:
         logger.error(f"Error de configuración de MongoDB: {str(e)}")
-        logger.exception("Detailed exception:")  # Add this line to log the full exception
+        logger.exception("Detailed exception:")
         return None
 
 # Encryption setup
