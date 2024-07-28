@@ -364,7 +364,7 @@ with st.container():
     with col2:
         st.markdown(create_tooltip("Teléfono", "Ingrese su número de teléfono."), unsafe_allow_html=True)
         telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
-
+        
     # Botón de cálculo
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
     if st.button(texto_boton, key="boton_calcular"):
@@ -419,21 +419,3 @@ with st.container():
             st.error("Por favor, asegúrese de ingresar una dirección válida y completar todos los campos.")
 
     st.markdown('</div>', unsafe_allow_html=True)
-
-# Instrucciones de uso
-with st.expander("Instrucciones de Uso"):
-    st.markdown("""
-    1. Seleccione el tipo de propiedad: Casa (en venta) o Departamento (en alquiler).
-    2. Ingrese la dirección completa de la propiedad. La aplicación buscará automáticamente la ubicación.
-    3. Verifique la ubicación en el mapa mostrado.
-    4. Proporcione el área del terreno y el área construida en metros cuadrados.
-    5. Indique el número de habitaciones y baños (puede usar decimales para baños, por ejemplo, 2.5 para dos baños completos y un medio baño).
-    6. Ingrese su nombre, apellido, correo electrónico y número de teléfono en los campos correspondientes.
-    7. Haga clic en "Estimar Valor" o "Estimar Alquiler" para obtener la estimación.
-
-    Nota: Asegúrese de que todos los campos estén completos para obtener una estimación precisa.
-    """)
-
-# Pie de página
-st.markdown("---")
-st.markdown(f"<p style='text-align: center; color: {TEXT_COLOR};'>© 2024 Estimador de Valor de Propiedad. Todos los derechos reservados.</p>", unsafe_allow_html=True)
