@@ -36,7 +36,7 @@ st.markdown(f"""
         font-family: 'Nunito', sans-serif;
     }}
     .stApp {{
-        max-width: 800px;
+        max-width: 700px;
         margin: 0 auto;
         padding: 20px;
     }}
@@ -266,6 +266,16 @@ def validar_telefono(telefono):
     patron = r'^\+?[1-9]\d{1,14}$'
     return re.match(patron, telefono) is not None
 
+# Callback function for address input
+def on_address_change():
+    st.session_state.sugerencias = obtener_sugerencias_direccion(st.session_state.entrada_direccion)
+
+# Initialize session state variables
+if 'entrada_direccion' not in st.session_state:
+    st.session_state.entrada_direccion = ""
+if 'sugerencias' not in st.session_state:
+    st.session_state.sugerencias = []
+
 # Interfaz de usuario
 st.markdown('<div class="title-banner"><h1>Estimador de Valor de Propiedades</h1></div>', unsafe_allow_html=True)
 
@@ -285,14 +295,11 @@ with st.container():
     with col2:
         # Dirección de la propiedad
         st.markdown(create_tooltip("Dirección de la Propiedad", "Ingrese la dirección completa de la propiedad."), unsafe_allow_html=True)
-        entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
+        st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México", on_change=on_address_change)
 
-        if entrada_direccion:
-            logger.debug(f"Dirección ingresada: {entrada_direccion}")
-            sugerencias = obtener_sugerencias_direccion(entrada_direccion)
-            if sugerencias:
-                st.markdown(create_tooltip("Dirección Sugerida", "Seleccione la dirección correcta de las sugerencias."), unsafe_allow_html=True)
-                direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida")
+        if st.session_state.sugerencias:
+            st.markdown(create_tooltip("Dirección Sugerida", "Seleccione la dirección correcta de las sugerencias."), unsafe_allow_html=True)
+            direccion_seleccionada = st.selectbox("", st.session_state.sugerencias, index=0, key="direccion_sugerida")
 
     # Geocodificación y mapa
     latitud, longitud = None, None
