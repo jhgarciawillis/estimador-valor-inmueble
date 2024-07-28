@@ -111,7 +111,7 @@ st.markdown(f"""
         top: 0;
         left: 0;
         bottom: 0;
-        right: 50px;
+        right: 500px;
     }}
     .tooltip {{
         position: relative;
