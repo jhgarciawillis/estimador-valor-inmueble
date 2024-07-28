@@ -40,7 +40,15 @@ def get_mongo_client():
         return None
 
 # Encryption setup
-fernet = Fernet(st.secrets["encryption"]["key"].encode())
+def get_or_create_key():
+    try:
+        return Fernet(st.secrets["encryption"]["key"].encode())
+    except KeyError:
+        logger.warning("Encryption key not found in secrets. Generating a new one.")
+        key = Fernet.generate_key()
+        return Fernet(key)
+
+fernet = get_or_create_key()
 
 def encrypt_data(data):
     return fernet.encrypt(json.dumps(data).encode()).decode()
