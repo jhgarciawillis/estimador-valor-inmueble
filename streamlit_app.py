@@ -89,6 +89,12 @@ st.markdown(f"""
         color: {TEXT_COLOR};
         margin-bottom: 5px;
         font-weight: bold;
+        display: flex;
+        align-items: center;
+    }}
+    .etiqueta-entrada .tooltip {{
+        margin-left: 5px;
+        cursor: help;
     }}
     .stExpander {{
         border: 1px solid {SECONDARY_COLOR};
@@ -106,8 +112,44 @@ st.markdown(f"""
         bottom: 0;
         right: 0;
     }}
+    .tooltip {{
+        position: relative;
+        display: inline-block;
+    }}
+    .tooltip .tooltiptext {{
+        visibility: hidden;
+        width: 200px;
+        background-color: {PRIMARY_COLOR};
+        color: {TEXT_COLOR};
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }}
+    .tooltip:hover .tooltiptext {{
+        visibility: visible;
+        opacity: 1;
+    }}
 </style>
 """, unsafe_allow_html=True)
+
+# Function to create a tooltip
+def create_tooltip(label, explanation):
+    return f"""
+    <div class="etiqueta-entrada">
+        {label}
+        <div class="tooltip">
+            <span>❔</span>
+            <span class="tooltiptext">{explanation}</span>
+        </div>
+    </div>
+    """
 
 # Cargar modelos y herramientas
 @st.cache_resource
@@ -234,7 +276,7 @@ with st.container():
 
     with col1:
         # Tipo de propiedad
-        st.markdown('<div class="etiqueta-entrada">Tipo de Propiedad</div>', unsafe_allow_html=True)
+        st.markdown(create_tooltip("Tipo de Propiedad", "Seleccione si es una casa en venta o un departamento en alquiler."), unsafe_allow_html=True)
         tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad")
 
         # Cargar modelos basados en el tipo de propiedad
@@ -242,14 +284,14 @@ with st.container():
 
     with col2:
         # Dirección de la propiedad
-        st.markdown('<div class="etiqueta-entrada">Dirección de la Propiedad</div>', unsafe_allow_html=True)
+        st.markdown(create_tooltip("Dirección de la Propiedad", "Ingrese la dirección completa de la propiedad."), unsafe_allow_html=True)
         entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
 
         if entrada_direccion:
             logger.debug(f"Dirección ingresada: {entrada_direccion}")
             sugerencias = obtener_sugerencias_direccion(entrada_direccion)
             if sugerencias:
-                st.markdown('<div class="etiqueta-entrada">Dirección Sugerida</div>', unsafe_allow_html=True)
+                st.markdown(create_tooltip("Dirección Sugerida", "Seleccione la dirección correcta de las sugerencias."), unsafe_allow_html=True)
                 direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida")
 
     # Geocodificación y mapa
@@ -272,40 +314,40 @@ with st.container():
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.markdown('<div class="etiqueta-entrada">Terreno (m²)</div>', unsafe_allow_html=True)
+        st.markdown(create_tooltip("Terreno (m²)", "Ingrese el área total del terreno en metros cuadrados."), unsafe_allow_html=True)
         terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno")
 
     with col2:
-        st.markdown('<div class="etiqueta-entrada">Construcción (m²)</div>', unsafe_allow_html=True)
+        st.markdown(create_tooltip("Construcción (m²)", "Ingrese el área construida en metros cuadrados."), unsafe_allow_html=True)
         construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion")
 
     with col3:
-        st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
+        st.markdown(create_tooltip("Habitaciones", "Ingrese el número total de habitaciones."), unsafe_allow_html=True)
         habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones")
 
     with col4:
-        st.markdown('<div class="etiqueta-entrada">Baños</div>', unsafe_allow_html=True)
+        st.markdown(create_tooltip("Baños", "Ingrese el número de baños (puede usar decimales, ej. 2.5 para dos baños completos y un medio baño)."), unsafe_allow_html=True)
         banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
 
     # Información personal
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown('<div class="etiqueta-entrada">Nombre</div>', unsafe_allow_html=True)
+        st.markdown(create_tooltip("Nombre", "Ingrese su nombre."), unsafe_allow_html=True)
         nombre = st.text_input("", key="nombre", placeholder="Ingrese su nombre")
 
     with col2:
-        st.markdown('<div class="etiqueta-entrada">Apellido</div>', unsafe_allow_html=True)
+        st.markdown(create_tooltip("Apellido", "Ingrese su apellido."), unsafe_allow_html=True)
         apellido = st.text_input("", key="apellido", placeholder="Ingrese su apellido")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown('<div class="etiqueta-entrada">Correo Electrónico</div>', unsafe_allow_html=True)
+        st.markdown(create_tooltip("Correo Electrónico", "Ingrese su dirección de correo electrónico."), unsafe_allow_html=True)
         correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com")
 
     with col2:
-        st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
+        st.markdown(create_tooltip("Teléfono", "Ingrese su número de teléfono."), unsafe_allow_html=True)
         telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
         
     # Botón de cálculo
