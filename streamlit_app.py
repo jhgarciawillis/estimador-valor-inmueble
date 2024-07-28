@@ -36,7 +36,7 @@ st.markdown(f"""
         font-family: 'Nunito', sans-serif;
     }}
     .stApp {{
-        max-width: 700px;
+        max-width: 800px;
         margin: 0 auto;
         padding: 20px;
     }}
