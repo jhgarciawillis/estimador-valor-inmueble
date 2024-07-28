@@ -107,9 +107,9 @@ st.markdown(f"""
         margin: 0px auto; /* Center the map */
     }}
     .map-container .folium-map {{
-        position: absolute;
+        position: center;
         top: 0;
-        left: 500px;
+        left: 0;
         bottom: 0;
         right: 0;
     }}
