@@ -104,7 +104,22 @@ st.markdown(f"""
         top: 0;
         left: 0;
         bottom: 0;
-        right: 500px;
+        right: 0;
+    }}
+    .edit-button {{
+        background-color: transparent;
+        border: none;
+        color: {SECONDARY_COLOR};
+        cursor: pointer;
+        font-size: 20px;
+        padding: 0 5px;
+    }}
+    .edit-button:hover {{
+        color: {PRIMARY_COLOR};
+    }}
+    .direccion-container {{
+        display: flex;
+        align-items: center;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -243,26 +258,41 @@ with st.container():
     with col2:
         # Dirección de la propiedad
         st.markdown('<div class="etiqueta-entrada">Dirección de la Propiedad</div>', unsafe_allow_html=True)
-        entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
+        
+        if 'direccion_corregida' not in st.session_state:
+            st.session_state.direccion_corregida = ""
+        if 'editar_direccion' not in st.session_state:
+            st.session_state.editar_direccion = False
 
-        if entrada_direccion:
-            logger.debug(f"Dirección ingresada: {entrada_direccion}")
-            sugerencias = obtener_sugerencias_direccion(entrada_direccion)
-            if sugerencias:
-                st.markdown('<div class="etiqueta-entrada">Dirección Sugerida</div>', unsafe_allow_html=True)
-                direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida")
+        def toggle_editar_direccion():
+            st.session_state.editar_direccion = not st.session_state.editar_direccion
+
+        if st.session_state.editar_direccion or not st.session_state.direccion_corregida:
+            entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
+            if entrada_direccion:
+                logger.debug(f"Dirección ingresada: {entrada_direccion}")
+                sugerencias = obtener_sugerencias_direccion(entrada_direccion)
+                if sugerencias:
+                    st.session_state.direccion_corregida = sugerencias[0]
+                    st.session_state.editar_direccion = False
+        else:
+            col1, col2 = st.columns([0.9, 0.1])
+            with col1:
+                st.text_input("", value=st.session_state.direccion_corregida, disabled=True, key="direccion_mostrada")
+            with col2:
+                st.button("✏️", key="editar_direccion", on_click=toggle_editar_direccion, help="Editar dirección")
 
     # Geocodificación y mapa
     latitud, longitud = None, None
-    if 'direccion_seleccionada' in locals():
-        latitud, longitud, ubicacion = geocodificar_direccion(direccion_seleccionada)
+    if st.session_state.direccion_corregida:
+        latitud, longitud, ubicacion = geocodificar_direccion(st.session_state.direccion_corregida)
         if latitud and longitud:
-            st.success(f"Ubicación encontrada: {direccion_seleccionada}")
+            st.success(f"Ubicación encontrada: {st.session_state.direccion_corregida}")
             logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
             
             # Crear y mostrar el mapa responsivo
             m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
-            folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
+            folium.Marker([latitud, longitud], popup=st.session_state.direccion_corregida).add_to(m)
             folium_static(m)
         else:
             logger.warning("No se pudo geocodificar la dirección seleccionada")
