@@ -262,34 +262,6 @@ def validar_telefono(telefono):
     patron = r'^\+?[1-9]\d{1,14}$'
     return re.match(patron, telefono) is not None
 
-def obtener_estado(latitud, longitud):
-    try:
-        location = geolocalizador.reverse(f"{latitud}, {longitud}")
-        logger.debug(f"Raw location data: {location.raw}")
-        if location and 'address' in location.raw:
-            address = location.raw['address']
-            state = address.get('state', '')
-            
-            # Check for alternative keys that might contain the state information
-            if not state:
-                for key in ['state_district', 'region', 'county']:
-                    if key in address:
-                        state = address[key]
-                        break
-            
-            # Special handling for Ciudad de México and Estado de México
-            if 'México' in state:
-                if any(city in state.lower() for city in ['ciudad de méxico', 'ciudad de mexico', 'cdmx', 'df']):
-                    state = 'Ciudad de México'
-                elif 'estado' in state.lower() or (state.lower() == 'méxico' and address.get('country') == 'México'):
-                    state = 'Estado de México'
-            
-            logger.debug(f"Extracted state: {state}")
-            return state if state else 'Estado no encontrado'
-    except Exception as e:
-        logger.error(f"Error al obtener el estado: {str(e)}")
-    return 'Estado no encontrado'
-
 # Callback function for address input
 def on_address_change():
     st.session_state.sugerencias = obtener_sugerencias_direccion(st.session_state.entrada_direccion)
@@ -307,8 +279,6 @@ if 'direccion_seleccionada' not in st.session_state:
     st.session_state.direccion_seleccionada = ""
 if 'mostrar_mapa' not in st.session_state:
     st.session_state.mostrar_mapa = False
-if 'estado' not in st.session_state:
-    st.session_state.estado = ""
 
 # Interfaz de usuario
 st.markdown('<div class="title-banner"><h1>Estimador de Valor de Propiedades</h1></div>', unsafe_allow_html=True)
@@ -331,7 +301,7 @@ with st.container():
         st.markdown(create_tooltip("Dirección de la Propiedad", "Ingrese la dirección completa de la propiedad."), unsafe_allow_html=True)
         st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México", on_change=on_address_change)
 
-    # Geocodificación, mapa y estado
+    # Geocodificación y mapa
     latitud, longitud = None, None
     if st.session_state.direccion_seleccionada:
         latitud, longitud, ubicacion = geocodificar_direccion(st.session_state.direccion_seleccionada)
@@ -339,19 +309,9 @@ with st.container():
             st.success(f"Ubicación encontrada: {st.session_state.direccion_seleccionada}")
             logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
             
-            # Obtener y mostrar el estado
-            st.session_state.estado = obtener_estado(latitud, longitud)
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown(create_tooltip("Estado", "Estado determinado automáticamente basado en la dirección."), unsafe_allow_html=True)
-                st.text_input("", value=st.session_state.estado, key="estado_input", disabled=True)
-            
-            with col2:
-                # Botón para mostrar/ocultar el mapa
-                if st.button("Mostrar/Ocultar Mapa"):
-                    st.session_state.mostrar_mapa = not st.session_state.mostrar_mapa
+            # Botón para mostrar/ocultar el mapa
+            if st.button("Mostrar/Ocultar Mapa"):
+                st.session_state.mostrar_mapa = not st.session_state.mostrar_mapa
 
             # Mostrar el mapa solo si el botón ha sido presionado
             if st.session_state.mostrar_mapa:
