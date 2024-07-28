@@ -71,7 +71,7 @@ st.markdown(f"""
         color: {PRIMARY_COLOR};
     }}
     .title-banner {{
-        background-color: {PRIMARY_COLOR};
+        background-color: {TEXT_COLOR};
         color: {TEXT_COLOR};
         padding: 20px;
         border-radius: 5px;
