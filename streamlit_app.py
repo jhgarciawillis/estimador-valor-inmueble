@@ -22,8 +22,8 @@ st.set_page_config(page_title="Estimador de Valor de Propiedades", layout="wide"
 # Color palette for real estate agency
 PRIMARY_COLOR = "#003366"  # Deep blue
 SECONDARY_COLOR = "#FFD700"  # Gold
-BACKGROUND_COLOR = "#F0F8FF"  # Light sky blue
-TEXT_COLOR = "#333333"  # Dark gray
+BACKGROUND_COLOR = "#1E1E1E"  # Dark background
+TEXT_COLOR = "#FFFFFF"  # White text
 ACCENT_COLOR = "#4CAF50"  # Green
 
 # CSS personalizado
@@ -39,20 +39,25 @@ st.markdown(f"""
         margin: 0 auto;
         padding: 20px;
     }}
+    .contenedor-principal {{
+        background-color: {BACKGROUND_COLOR};
+        border-radius: 10px;
+        padding: 20px;
+    }}
     .stTextInput > div > div > input,
     .stSelectbox > div > div > select,
     .stNumberInput > div > div > input {{
         color: {TEXT_COLOR};
-        background-color: #F0F0F0;
-        border: 1px solid #CCCCCC;
+        background-color: #2D2D2D;
+        border: 1px solid #4A4A4A;
         border-radius: 4px;
         padding: 8px 10px;
     }}
     .stTextInput > div > div > input:focus,
     .stSelectbox > div > div > select:focus,
     .stNumberInput > div > div > input:focus {{
-        border-color: {PRIMARY_COLOR};
-        box-shadow: 0 0 0 1px {PRIMARY_COLOR};
+        border-color: {SECONDARY_COLOR};
+        box-shadow: 0 0 0 1px {SECONDARY_COLOR};
     }}
     .stButton > button {{
         width: 100%;
@@ -69,7 +74,7 @@ st.markdown(f"""
         color: {PRIMARY_COLOR};
     }}
     h1 {{
-        color: {PRIMARY_COLOR};
+        color: {SECONDARY_COLOR};
         font-size: 28px;
         font-weight: bold;
         margin-bottom: 20px;
@@ -77,12 +82,12 @@ st.markdown(f"""
     }}
     .etiqueta-entrada {{
         font-size: 14px;
-        color: {PRIMARY_COLOR};
+        color: {SECONDARY_COLOR};
         margin-bottom: 5px;
         font-weight: bold;
     }}
     .stExpander {{
-        border: 1px solid {PRIMARY_COLOR};
+        border: 1px solid {SECONDARY_COLOR};
         border-radius: 5px;
     }}
 </style>
@@ -225,36 +230,17 @@ with st.container():
         entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
 
     with col2:
-        # Nombre y Apellido
-        st.markdown('<div class="etiqueta-entrada">Nombre</div>', unsafe_allow_html=True)
-        nombre = st.text_input("", key="nombre", placeholder="Ingrese su nombre")
+        # Placeholder para mantener el alineamiento
+        st.markdown('<div style="height: 76px;"></div>', unsafe_allow_html=True)
 
-        st.markdown('<div class="etiqueta-entrada">Apellido</div>', unsafe_allow_html=True)
-        apellido = st.text_input("", key="apellido", placeholder="Ingrese su apellido")
+        if entrada_direccion:
+            logger.debug(f"Dirección ingresada: {entrada_direccion}")
+            sugerencias = obtener_sugerencias_direccion(entrada_direccion)
+            if sugerencias:
+                st.markdown('<div class="etiqueta-entrada">Dirección Sugerida</div>', unsafe_allow_html=True)
+                direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida")
 
-    latitud, longitud = None, None
-
-    if entrada_direccion:
-        logger.debug(f"Dirección ingresada: {entrada_direccion}")
-        sugerencias = obtener_sugerencias_direccion(entrada_direccion)
-        if sugerencias:
-            st.markdown('<div class="etiqueta-entrada">Dirección Sugerida</div>', unsafe_allow_html=True)
-            direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida")
-            if direccion_seleccionada:
-                latitud, longitud, ubicacion = geocodificar_direccion(direccion_seleccionada)
-                if latitud and longitud:
-                    st.success(f"Ubicación encontrada: {direccion_seleccionada}")
-                    logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
-                    
-                    # Crear y mostrar el mapa responsivo
-                    m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB positron")
-                    folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
-                    folium_static(m)
-                else:
-                    logger.warning("No se pudo geocodificar la dirección seleccionada")
-                    st.error("No se pudo geocodificar la dirección seleccionada.")
-
-    # Entradas para detalles de la propiedad
+    # Detalles de la propiedad
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
@@ -273,16 +259,38 @@ with st.container():
         st.markdown('<div class="etiqueta-entrada">Baños</div>', unsafe_allow_html=True)
         banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
 
-    # Campos de correo electrónico y teléfono
+    # Información personal
     col1, col2 = st.columns(2)
 
     with col1:
+        st.markdown('<div class="etiqueta-entrada">Nombre</div>', unsafe_allow_html=True)
+        nombre = st.text_input("", key="nombre", placeholder="Ingrese su nombre")
+
         st.markdown('<div class="etiqueta-entrada">Correo Electrónico</div>', unsafe_allow_html=True)
         correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com")
 
     with col2:
+        st.markdown('<div class="etiqueta-entrada">Apellido</div>', unsafe_allow_html=True)
+        apellido = st.text_input("", key="apellido", placeholder="Ingrese su apellido")
+
         st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
         telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
+
+    # Geocodificación y mapa
+    latitud, longitud = None, None
+    if 'direccion_seleccionada' in locals():
+        latitud, longitud, ubicacion = geocodificar_direccion(direccion_seleccionada)
+        if latitud and longitud:
+            st.success(f"Ubicación encontrada: {direccion_seleccionada}")
+            logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
+            
+            # Crear y mostrar el mapa responsivo
+            m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
+            folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
+            folium_static(m)
+        else:
+            logger.warning("No se pudo geocodificar la dirección seleccionada")
+            st.error("No se pudo geocodificar la dirección seleccionada.")
         
     # Botón de cálculo
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
@@ -304,10 +312,10 @@ with st.container():
                 precio, precio_min, precio_max = predecir_precio(datos_procesados, modelos)
                 if precio is not None:
                     if tipo_propiedad == "Casa":
-                        st.markdown(f"<h3 style='color: {PRIMARY_COLOR};'>Valor Estimado: ${precio:,}</h3>", unsafe_allow_html=True)
+                        st.markdown(f"<h3 style='color: {SECONDARY_COLOR};'>Valor Estimado: ${precio:,}</h3>", unsafe_allow_html=True)
                         st.markdown(f"<p style='color: {TEXT_COLOR};'>Rango de Precio Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
                     else:
-                        st.markdown(f"<h3 style='color: {PRIMARY_COLOR};'>Renta Mensual Estimada: ${precio:,}</h3>", unsafe_allow_html=True)
+                        st.markdown(f"<h3 style='color: {SECONDARY_COLOR};'>Renta Mensual Estimada: ${precio:,}</h3>", unsafe_allow_html=True)
                         st.markdown(f"<p style='color: {TEXT_COLOR};'>Rango de Renta Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
 
                     # Gráfico de barras para visualizar el rango de precios
