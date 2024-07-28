@@ -39,12 +39,7 @@ st.markdown(f"""
         margin: 0 auto;
         padding: 20px;
     }}
-    .contenedor-principal {{
-        background-color: white;
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }}
+
     .stTextInput > div > div > input,
     .stSelectbox > div > div > select,
     .stNumberInput > div > div > input {{
