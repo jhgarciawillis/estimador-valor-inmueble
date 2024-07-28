@@ -39,15 +39,20 @@ st.markdown(f"""
         margin: 0 auto;
         padding: 20px;
     }}
-
     .stTextInput > div > div > input,
     .stSelectbox > div > div > select,
     .stNumberInput > div > div > input {{
         color: {TEXT_COLOR};
-        background-color: white;
-        border: 1px solid {PRIMARY_COLOR};
+        background-color: #F0F0F0;
+        border: 1px solid #CCCCCC;
         border-radius: 4px;
         padding: 8px 10px;
+    }}
+    .stTextInput > div > div > input:focus,
+    .stSelectbox > div > div > select:focus,
+    .stNumberInput > div > div > input:focus {{
+        border-color: {PRIMARY_COLOR};
+        box-shadow: 0 0 0 1px {PRIMARY_COLOR};
     }}
     .stButton > button {{
         width: 100%;
