@@ -96,15 +96,8 @@ st.markdown(f"""
     }}
     .map-container {{
         width: 100%;
-        padding-top: 100%; /* This creates a 1:1 aspect ratio */
-        position: relative;
-    }}
-    .map-container .folium-map {{
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
+        aspect-ratio: 1;
+        margin-bottom: 20px;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -261,10 +254,10 @@ with st.container():
             logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
             
             # Crear y mostrar el mapa responsivo
+            st.markdown('<div class="map-container">', unsafe_allow_html=True)
             m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
             folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
-            st.markdown('<div class="map-container">', unsafe_allow_html=True)
-            folium_static(m, width='100%', height='100%')
+            folium_static(m)
             st.markdown('</div>', unsafe_allow_html=True)
         else:
             logger.warning("No se pudo geocodificar la dirección seleccionada")
