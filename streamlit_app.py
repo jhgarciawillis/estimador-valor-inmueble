@@ -39,11 +39,7 @@ st.markdown(f"""
         margin: 0 auto;
         padding: 20px;
     }}
-    .contenedor-principal {{
-        background-color: {BACKGROUND_COLOR};
-        border-radius: 10px;
-        padding: 20px;
-    }}
+
     .stTextInput > div > div > input,
     .stSelectbox > div > div > select,
     .stNumberInput > div > div > input {{
@@ -74,7 +70,7 @@ st.markdown(f"""
         color: {PRIMARY_COLOR};
     }}
     h1 {{
-        color: {SECONDARY_COLOR};
+        color: {PRIMARY_COLOR};
         font-size: 28px;
         font-weight: bold;
         margin-bottom: 20px;
@@ -82,7 +78,7 @@ st.markdown(f"""
     }}
     .etiqueta-entrada {{
         font-size: 14px;
-        color: {SECONDARY_COLOR};
+        color: {PRIMARYY_COLOR};
         margin-bottom: 5px;
         font-weight: bold;
     }}
@@ -213,7 +209,6 @@ st.title("Estimador de Valor de Propiedades")
 
 # Contenedor principal
 with st.container():
-    st.markdown('<div class="contenedor-principal">', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
 
