@@ -19,49 +19,72 @@ logger = logging.getLogger(__name__)
 # Configuración de la página
 st.set_page_config(page_title="Estimador de Valor de Propiedades", layout="wide")
 
+# Color palette for real estate agency
+PRIMARY_COLOR = "#003366"  # Deep blue
+SECONDARY_COLOR = "#FFD700"  # Gold
+BACKGROUND_COLOR = "#F0F8FF"  # Light sky blue
+TEXT_COLOR = "#333333"  # Dark gray
+ACCENT_COLOR = "#4CAF50"  # Green
+
 # CSS personalizado
-st.markdown("""
+st.markdown(f"""
 <style>
-    body {
-        color: #FFFFFF;
-        background-color: #1E1E1E;
-        font-family: 'Roboto', sans-serif;
-    }
-    .stApp {
-        max-width: 800px;
+    body {{
+        color: {TEXT_COLOR};
+        background-color: {BACKGROUND_COLOR};
+        font-family: 'Arial', sans-serif;
+    }}
+    .stApp {{
+        max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
-    }
-    .contenedor-principal {
-        background-color: #2D2D2D;
+    }}
+    .contenedor-principal {{
+        background-color: white;
         border-radius: 10px;
-        padding: 30px;
-        margin-bottom: 20px;
-    }
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }}
     .stTextInput > div > div > input,
     .stSelectbox > div > div > select,
-    .stNumberInput > div > div > input {
-        color: #FFFFFF;
-        background-color: #1E1E1E;
-        border: 1px solid #4A4A4A;
+    .stNumberInput > div > div > input {{
+        color: {TEXT_COLOR};
+        background-color: white;
+        border: 1px solid {PRIMARY_COLOR};
         border-radius: 4px;
         padding: 8px 10px;
-    }
-    .stButton > button {
+    }}
+    .stButton > button {{
         width: 100%;
-        background-color: #4A90E2;
+        background-color: {PRIMARY_COLOR};
         color: white;
-    }
-    h1 {
-        color: #4A90E2;
-        font-size: 24px;
+        font-weight: bold;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }}
+    .stButton > button:hover {{
+        background-color: {SECONDARY_COLOR};
+        color: {PRIMARY_COLOR};
+    }}
+    h1 {{
+        color: {PRIMARY_COLOR};
+        font-size: 28px;
+        font-weight: bold;
         margin-bottom: 20px;
-    }
-    .etiqueta-entrada {
+        text-align: center;
+    }}
+    .etiqueta-entrada {{
         font-size: 14px;
-        color: #B0B0B0;
+        color: {PRIMARY_COLOR};
         margin-bottom: 5px;
-    }
+        font-weight: bold;
+    }}
+    .stExpander {{
+        border: 1px solid {PRIMARY_COLOR};
+        border-radius: 5px;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -187,16 +210,27 @@ st.title("Estimador de Valor de Propiedades")
 with st.container():
     st.markdown('<div class="contenedor-principal">', unsafe_allow_html=True)
 
-    # Tipo de propiedad
-    st.markdown('<div class="etiqueta-entrada">Tipo de Propiedad</div>', unsafe_allow_html=True)
-    tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad")
+    col1, col2 = st.columns(2)
 
-    # Cargar modelos basados en el tipo de propiedad
-    modelos = cargar_modelos(tipo_propiedad)
+    with col1:
+        # Tipo de propiedad
+        st.markdown('<div class="etiqueta-entrada">Tipo de Propiedad</div>', unsafe_allow_html=True)
+        tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad")
 
-    # Dirección de la propiedad
-    st.markdown('<div class="etiqueta-entrada">Dirección de la Propiedad</div>', unsafe_allow_html=True)
-    entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
+        # Cargar modelos basados en el tipo de propiedad
+        modelos = cargar_modelos(tipo_propiedad)
+
+        # Dirección de la propiedad
+        st.markdown('<div class="etiqueta-entrada">Dirección de la Propiedad</div>', unsafe_allow_html=True)
+        entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
+
+    with col2:
+        # Nombre y Apellido
+        st.markdown('<div class="etiqueta-entrada">Nombre</div>', unsafe_allow_html=True)
+        nombre = st.text_input("", key="nombre", placeholder="Ingrese su nombre")
+
+        st.markdown('<div class="etiqueta-entrada">Apellido</div>', unsafe_allow_html=True)
+        apellido = st.text_input("", key="apellido", placeholder="Ingrese su apellido")
 
     latitud, longitud = None, None
 
@@ -213,7 +247,7 @@ with st.container():
                     logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
                     
                     # Crear y mostrar el mapa responsivo
-                    m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
+                    m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB positron")
                     folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
                     folium_static(m)
                 else:
@@ -221,34 +255,42 @@ with st.container():
                     st.error("No se pudo geocodificar la dirección seleccionada.")
 
     # Entradas para detalles de la propiedad
-    col1, col2 = st.columns(2)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.markdown('<div class="etiqueta-entrada">Terreno (m²)</div>', unsafe_allow_html=True)
         terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno")
 
+    with col2:
         st.markdown('<div class="etiqueta-entrada">Construcción (m²)</div>', unsafe_allow_html=True)
         construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion")
 
-    with col2:
+    with col3:
         st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
         habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones")
 
+    with col4:
         st.markdown('<div class="etiqueta-entrada">Baños</div>', unsafe_allow_html=True)
         banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
 
     # Campos de correo electrónico y teléfono
-    st.markdown('<div class="etiqueta-entrada">Correo Electrónico</div>', unsafe_allow_html=True)
-    correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com")
+    col1, col2 = st.columns(2)
 
-    st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
-    telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
+    with col1:
+        st.markdown('<div class="etiqueta-entrada">Correo Electrónico</div>', unsafe_allow_html=True)
+        correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com")
+
+    with col2:
+        st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
+        telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
         
     # Botón de cálculo
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
     if st.button(texto_boton, key="boton_calcular"):
         logger.debug(f"Botón presionado: {texto_boton}")
-        if not validar_correo(correo):
+        if not nombre or not apellido:
+            st.error("Por favor, ingrese su nombre y apellido.")
+        elif not validar_correo(correo):
             logger.warning(f"Correo electrónico inválido: {correo}")
             st.error("Por favor, ingrese una dirección de correo electrónico válida.")
         elif not validar_telefono(telefono):
@@ -256,19 +298,17 @@ with st.container():
             st.error("Por favor, ingrese un número de teléfono válido.")
         elif latitud and longitud and terreno and construccion and habitaciones and banos:
             logger.debug("Todos los campos requeridos están completos")
-            # Aquí puedes guardar el correo y teléfono en tu base de datos o sistema de almacenamiento
-            st.success(f"Detalles de contacto guardados: Correo: {correo}, Teléfono: {telefono}")
             
             datos_procesados = preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos)
             if datos_procesados is not None:
                 precio, precio_min, precio_max = predecir_precio(datos_procesados, modelos)
                 if precio is not None:
                     if tipo_propiedad == "Casa":
-                        st.markdown(f"<h3 style='color: #50E3C2;'>Valor Estimado: ${precio:,}</h3>", unsafe_allow_html=True)
-                        st.markdown(f"<p style='color: #B0B0B0;'>Rango de Precio Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<h3 style='color: {PRIMARY_COLOR};'>Valor Estimado: ${precio:,}</h3>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='color: {TEXT_COLOR};'>Rango de Precio Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
                     else:
-                        st.markdown(f"<h3 style='color: #50E3C2;'>Renta Mensual Estimada: ${precio:,}</h3>", unsafe_allow_html=True)
-                        st.markdown(f"<p style='color: #B0B0B0;'>Rango de Renta Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<h3 style='color: {PRIMARY_COLOR};'>Renta Mensual Estimada: ${precio:,}</h3>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='color: {TEXT_COLOR};'>Rango de Renta Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
 
                     # Gráfico de barras para visualizar el rango de precios
                     fig = go.Figure(go.Bar(
@@ -276,15 +316,15 @@ with st.container():
                         y=[precio_min, precio, precio_max],
                         text=[f'${precio_min:,}', f'${precio:,}', f'${precio_max:,}'],
                         textposition='auto',
-                        marker_color=['#4A90E2', '#50E3C2', '#4A90E2']
+                        marker_color=[SECONDARY_COLOR, PRIMARY_COLOR, SECONDARY_COLOR]
                     ))
                     fig.update_layout(
                         title_text='Rango de Precio Estimado',
-                        font=dict(family="Roboto", color="#FFFFFF"),
-                        paper_bgcolor="#2D2D2D",
-                        plot_bgcolor="#3D3D3D",
-                        xaxis=dict(tickfont=dict(color="#FFFFFF")),
-                        yaxis=dict(tickfont=dict(color="#FFFFFF"))
+                        font=dict(family="Arial", color=TEXT_COLOR),
+                        paper_bgcolor=BACKGROUND_COLOR,
+                        plot_bgcolor=BACKGROUND_COLOR,
+                        xaxis=dict(tickfont=dict(color=TEXT_COLOR)),
+                        yaxis=dict(tickfont=dict(color=TEXT_COLOR))
                     )
                     st.plotly_chart(fig)
                 else:
@@ -307,7 +347,7 @@ with st.expander("Instrucciones de Uso"):
     3. Verifique la ubicación en el mapa mostrado.
     4. Proporcione el área del terreno y el área construida en metros cuadrados.
     5. Indique el número de habitaciones y baños (puede usar decimales para baños, por ejemplo, 2.5 para dos baños completos y un medio baño).
-    6. Ingrese su correo electrónico y número de teléfono en los campos correspondientes.
+    6. Ingrese su nombre, apellido, correo electrónico y número de teléfono en los campos correspondientes.
     7. Haga clic en "Estimar Valor" o "Estimar Alquiler" para obtener la estimación.
 
     Nota: Asegúrese de que todos los campos estén completos para obtener una estimación precisa.
@@ -315,4 +355,4 @@ with st.expander("Instrucciones de Uso"):
 
 # Pie de página
 st.markdown("---")
-st.markdown("© 2024 Estimador de Valor de Propiedad. Todos los derechos reservados.")
+st.markdown(f"<p style='text-align: center; color: {TEXT_COLOR};'>© 2024 Estimador de Valor de Propiedad. Todos los derechos reservados.</p>", unsafe_allow_html=True)
