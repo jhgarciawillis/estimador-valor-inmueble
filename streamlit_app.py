@@ -109,9 +109,9 @@ st.markdown(f"""
     .map-container .folium-map {{
         position: absolute;
         top: 0;
-        left: 0;
+        left: 500px;
         bottom: 0;
-        right: 500px;
+        right: 0;
     }}
     .tooltip {{
         position: relative;
