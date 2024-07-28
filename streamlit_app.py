@@ -16,10 +16,43 @@ import folium
 from streamlit_folium import folium_static
 import re
 import logging
+from datetime import datetime
+from cryptography.fernet import Fernet
+import json
+from pymongo import MongoClient
 
 # Configurar registro
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+# MongoDB connection
+@st.cache_resource
+def get_mongo_client():
+    return MongoClient(st.secrets["mongo"]["connection_string"])
+
+# Encryption setup
+fernet = Fernet(st.secrets["encryption"]["key"].encode())
+
+def encrypt_data(data):
+    return fernet.encrypt(json.dumps(data).encode()).decode()
+
+def decrypt_data(encrypted_data):
+    return json.loads(fernet.decrypt(encrypted_data.encode()).decode())
+
+def store_data(data):
+    encrypted_data = encrypt_data(data)
+    with get_mongo_client() as client:
+        db = client.property_database
+        collection = db.property_data
+        collection.insert_one({"timestamp": datetime.now().isoformat(), "data": encrypted_data})
+    logger.debug("Data stored successfully")
+
+def retrieve_data():
+    with get_mongo_client() as client:
+        db = client.property_database
+        collection = db.property_data
+        for doc in collection.find():
+            yield doc['timestamp'], decrypt_data(doc['data'])
 
 # Configuración de la página
 st.set_page_config(page_title="Estimador de Valor de Propiedades", layout="wide")
@@ -32,6 +65,12 @@ st.markdown("""
         background-color: #1E1E1E;
         font-family: 'Roboto', sans-serif;
     }
+    .widget-container {
+        background-color: #2D2D2D;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
     .stTextInput > div > div > input,
     .stSelectbox > div > div > select,
     .stNumberInput > div > div > input {
@@ -40,7 +79,7 @@ st.markdown("""
         border: 1px solid #4A4A4A;
         border-radius: 4px;
         padding: 8px 10px;
-        max-width: 200px;
+        width: 100%;
     }
     .stButton > button {
         width: 100%;
@@ -184,114 +223,138 @@ def validar_telefono(telefono):
 # Interfaz de usuario
 st.title("Estimador de Valor de Propiedades")
 
-# Tipo de propiedad
-st.markdown('<div class="etiqueta-entrada">Tipo de Propiedad</div>', unsafe_allow_html=True)
-tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad", help="Seleccione el tipo de propiedad")
+# Contenedor principal
+with st.container():
+    st.markdown('<div class="widget-container">', unsafe_allow_html=True)
 
-# Cargar modelos basados en el tipo de propiedad
-modelos = cargar_modelos(tipo_propiedad)
+    # Tipo de propiedad
+    st.markdown('<div class="etiqueta-entrada">Tipo de Propiedad</div>', unsafe_allow_html=True)
+    tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad", help="Seleccione el tipo de propiedad")
 
-# Dirección de la propiedad
-st.markdown('<div class="etiqueta-entrada">Dirección de la Propiedad</div>', unsafe_allow_html=True)
-entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México", help="Ingrese la dirección completa de la propiedad")
+    # Cargar modelos basados en el tipo de propiedad
+    modelos = cargar_modelos(tipo_propiedad)
 
-latitud, longitud = None, None
+    # Dirección de la propiedad
+    st.markdown('<div class="etiqueta-entrada">Dirección de la Propiedad</div>', unsafe_allow_html=True)
+    entrada_direccion = st.text_input("", key="entrada_direccion", help="Ingrese la dirección completa de la propiedad")
 
-if entrada_direccion:
-    logger.debug(f"Dirección ingresada: {entrada_direccion}")
-    sugerencias = obtener_sugerencias_direccion(entrada_direccion)
-    if sugerencias:
-        st.markdown('<div class="etiqueta-entrada">Dirección Sugerida</div>', unsafe_allow_html=True)
-        direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida", help="Seleccione la dirección correcta de las sugerencias")
-        if direccion_seleccionada:
-            latitud, longitud, ubicacion = geocodificar_direccion(direccion_seleccionada)
-            if latitud and longitud:
-                st.success(f"Ubicación encontrada: {direccion_seleccionada}")
-                logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
-                
-                # Crear y mostrar el mapa responsivo
-                m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
-                folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
-                folium_static(m, width=300, height=200)
-            else:
-                logger.warning("No se pudo geocodificar la dirección seleccionada")
-                st.error("No se pudo geocodificar la dirección seleccionada.")
+    latitud, longitud = None, None
 
-# Entradas para detalles de la propiedad
-col1, col2 = st.columns(2)
-
-with col1:
-    st.markdown('<div class="etiqueta-entrada">Terreno (m²)</div>', unsafe_allow_html=True)
-    terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno", help="Área total del terreno en metros cuadrados")
-
-    st.markdown('<div class="etiqueta-entrada">Construcción (m²)</div>', unsafe_allow_html=True)
-    construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion", help="Área construida en metros cuadrados")
-
-with col2:
-    st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
-    habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones", help="Número de habitaciones")
-
-    st.markdown('<div class="etiqueta-entrada">Baños</div>', unsafe_allow_html=True)
-    banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos", help="Número de baños (use decimales para medios baños)")
-
-# Campos de correo electrónico y teléfono
-st.markdown('<div class="etiqueta-entrada">Correo Electrónico</div>', unsafe_allow_html=True)
-correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com", help="Ingrese su dirección de correo electrónico")
-
-st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
-telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890", help="Ingrese su número de teléfono")
-
-# Botón de cálculo
-texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
-if st.button(texto_boton, key="boton_calcular"):
-    logger.debug(f"Botón presionado: {texto_boton}")
-    if not validar_correo(correo):
-        logger.warning(f"Correo electrónico inválido: {correo}")
-        st.error("Por favor, ingrese una dirección de correo electrónico válida.")
-    elif not validar_telefono(telefono):
-        logger.warning(f"Teléfono inválido: {telefono}")
-        st.error("Por favor, ingrese un número de teléfono válido.")
-    elif latitud and longitud and terreno and construccion and habitaciones and banos:
-        logger.debug("Todos los campos requeridos están completos")
-        st.success(f"Detalles de contacto guardados: Correo: {correo}, Teléfono: {telefono}")
-        
-        datos_procesados = preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos)
-        if datos_procesados is not None:
-            precio, precio_min, precio_max = predecir_precio(datos_procesados, modelos)
-            if precio is not None:
-                if tipo_propiedad == "Casa":
-                    st.markdown(f"<h3 style='color: #50E3C2;'>Valor Estimado: ${precio:,}</h3>", unsafe_allow_html=True)
-                    st.markdown(f"<p style='color: #B0B0B0;'>Rango de Precio Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
+    if entrada_direccion:
+        logger.debug(f"Dirección ingresada: {entrada_direccion}")
+        sugerencias = obtener_sugerencias_direccion(entrada_direccion)
+        if sugerencias:
+            st.markdown('<div class="etiqueta-entrada">Dirección Sugerida</div>', unsafe_allow_html=True)
+            direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida", help="Seleccione la dirección correcta de las sugerencias")
+            if direccion_seleccionada:
+                latitud, longitud, ubicacion = geocodificar_direccion(direccion_seleccionada)
+                if latitud and longitud:
+                    st.success(f"Ubicación encontrada: {direccion_seleccionada}")
+                    logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
+                    
+                    # Crear y mostrar el mapa responsivo
+                    m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
+                    folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
+                    folium_static(m, width=300, height=200)
                 else:
-                    st.markdown(f"<h3 style='color: #50E3C2;'>Renta Mensual Estimada: ${precio:,}</h3>", unsafe_allow_html=True)
-                    st.markdown(f"<p style='color: #B0B0B0;'>Rango de Renta Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
+                    logger.warning("No se pudo geocodificar la dirección seleccionada")
+                    st.error("No se pudo geocodificar la dirección seleccionada.")
 
-                # Gráfico de barras para visualizar el rango de precios
-                fig = go.Figure(go.Bar(
-                    x=['Precio Mínimo', 'Precio Estimado', 'Precio Máximo'],
-                    y=[precio_min, precio, precio_max],
-                    text=[f'${precio_min:,}', f'${precio:,}', f'${precio_max:,}'],
-                    textposition='auto',
-                    marker_color=['#4A90E2', '#50E3C2', '#4A90E2']
-                ))
-                fig.update_layout(
-                    title_text='Rango de Precio Estimado',
-                    font=dict(family="Roboto", color="#FFFFFF"),
-                    paper_bgcolor="#2D2D2D",
-                    plot_bgcolor="#3D3D3D",
-                    xaxis=dict(tickfont=dict(color="#FFFFFF")),
-                    yaxis=dict(tickfont=dict(color="#FFFFFF"))
-                )
-                st.plotly_chart(fig)
+    # Entradas para detalles de la propiedad
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown('<div class="etiqueta-entrada">Terreno (m²)</div>', unsafe_allow_html=True)
+        terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno", help="Área total del terreno en metros cuadrados")
+
+        st.markdown('<div class="etiqueta-entrada">Construcción (m²)</div>', unsafe_allow_html=True)
+        construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion", help="Área construida en metros cuadrados")
+
+    with col2:
+        st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
+        habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones", help="Número de habitaciones")
+
+        st.markdown('<div class="etiqueta-entrada">Baños</div>', unsafe_allow_html=True)
+        banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos", help="Número de baños (use decimales para medios baños)")
+
+    # Campos de correo electrónico y teléfono
+    st.markdown('<div class="etiqueta-entrada">Correo Electrónico</div>', unsafe_allow_html=True)
+    correo = st.text_input("", key="correo", help="Ingrese su dirección de correo electrónico")
+
+    st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
+    telefono = st.text_input("", key="telefono", help="Ingrese su número de teléfono")
+
+    # Botón de cálculo
+    texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
+    if st.button(texto_boton, key="boton_calcular"):
+        logger.debug(f"Botón presionado: {texto_boton}")
+        if not validar_correo(correo):
+            logger.warning(f"Correo electrónico inválido: {correo}")
+            st.error("Por favor, ingrese una dirección de correo electrónico válida.")
+        elif not validar_telefono(telefono):
+            logger.warning(f"Teléfono inválido: {telefono}")
+            st.error("Por favor, ingrese un número de teléfono válido.")
+        elif latitud and longitud and terreno and construccion and habitaciones and banos:
+            logger.debug("Todos los campos requeridos están completos")
+            
+            datos_procesados = preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos)
+            if datos_procesados is not None:
+                precio, precio_min, precio_max = predecir_precio(datos_procesados, modelos)
+                if precio is not None:
+                    if tipo_propiedad == "Casa":
+                        st.markdown(f"<h3 style='color: #50E3C2;'>Valor Estimado: ${precio:,}</h3>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='color: #B0B0B0;'>Rango de Precio Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"<h3 style='color: #50E3C2;'>Renta Mensual Estimada: ${precio:,}</h3>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='color: #B0B0B0;'>Rango de Renta Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
+
+                    # Prepare data to store
+                    data_to_store = {
+                        "tipo_propiedad": tipo_propiedad,
+                        "direccion": direccion_seleccionada,
+                        "latitud": latitud,
+                        "longitud": longitud,
+                        "terreno": terreno,
+                        "construccion": construccion,
+                        "habitaciones": habitaciones,
+                        "banos": banos,
+                        "correo": correo,
+                        "telefono": telefono,
+                        "precio_estimado": precio,
+                        "precio_min": precio_min,
+                        "precio_max": precio_max
+                    }
+
+                    # Store data
+                    store_data(data_to_store)
+
+                    # Gráfico de barras para visualizar el rango de precios
+                    fig = go.Figure(go.Bar(
+                        x=['Precio Mínimo', 'Precio Estimado', 'Precio Máximo'],
+                        y=[precio_min, precio, precio_max],
+                        text=[f'${precio_min:,}', f'${precio:,}', f'${precio_max:,}'],
+                        textposition='auto',
+                        marker_color=['#4A90E2', '#50E3C2', '#4A90E2']
+                    ))
+                    fig.update_layout(
+                        title_text='Rango de Precio Estimado',
+                        font=dict(family="Roboto", color="#FFFFFF"),
+                        paper_bgcolor="#2D2D2D",
+                        plot_bgcolor="#3D3D3D",
+                        xaxis=dict(tickfont=dict(color="#FFFFFF")),
+                        yaxis=dict(tickfont=dict(color="#FFFFFF"))
+                    )
+                    st.plotly_chart(fig)
+                else:
+                    logger.error("Error predicting the price")
+                    st.error("Hubo un error al calcular el precio. Por favor, inténtelo de nuevo.")
             else:
-                logger.error("Error predicting the price")
-                st.error("Hubo un error al calcular el precio. Por favor, inténtelo de nuevo.")
+                logger.error("Error preprocessing the data")
+                st.error("Hubo un error al procesar los datos. Por favor, inténtelo de nuevo.")
         else:
-            logger.error("Error preprocessing the data")
-            st.error("Hubo un error al procesar los datos. Por favor, inténtelo de nuevo.")
-    else:
-        logger.warning("Incomplete fields")
-        st.error("Por favor, asegúrese de ingresar una dirección válida y completar todos los campos.")
+            logger.warning("Incomplete fields")
+            st.error("Por favor, asegúrese de ingresar una dirección válida y completar todos los campos.")
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Instrucciones de uso
