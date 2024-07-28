@@ -33,10 +33,10 @@ st.markdown(f"""
     body {{
         color: {TEXT_COLOR};
         background-color: {BACKGROUND_COLOR};
-        font-family: 'Arial', sans-serif;
+        font-family: 'Nunito', sans-serif;
     }}
     .stApp {{
-        max-width: 1200px;
+        max-width: 600px;
         margin: 0 auto;
         padding: 20px;
     }}
