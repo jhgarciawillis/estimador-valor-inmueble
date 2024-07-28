@@ -22,6 +22,7 @@ import json
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 import certifi
+import ssl
 
 # Configurar registro
 logging.basicConfig(level=logging.DEBUG)
@@ -34,7 +35,8 @@ def get_mongo_client():
         client = MongoClient(
             st.secrets["mongo"]["connection_string"],
             server_api=ServerApi('1'),
-            tlsCAFile=certifi.where()
+            tlsCAFile=certifi.where(),
+            ssl_cert_reqs=ssl.CERT_NONE  # This line disables certificate verification
         )
         # Send a ping to confirm a successful connection
         client.admin.command('ping')
@@ -47,7 +49,7 @@ def get_mongo_client():
 # Encryption setup
 def get_or_create_key():
     try:
-        return Fernet(st.secrets["encryption"]["key"].encode())
+        return Fernet(st.secrets["encryption"]["CD4A6EVjqVOEyztYRlE6qs5k5Wp8aTao3G6-zkPQNJw="].encode())
     except KeyError:
         logger.warning("Encryption key not found in secrets. Generating a new one.")
         key = Fernet.generate_key()
@@ -260,6 +262,7 @@ def validar_telefono(telefono):
 
 # Interfaz de usuario
 st.title("Estimador de Valor de Propiedades")
+
 # Contenedor principal
 with st.container():
     st.markdown('<div class="widget-container">', unsafe_allow_html=True)
