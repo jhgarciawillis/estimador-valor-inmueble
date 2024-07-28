@@ -262,7 +262,6 @@ def validar_telefono(telefono):
     patron = r'^\+?[1-9]\d{1,14}$'
     return re.match(patron, telefono) is not None
 
-# Function to get the state from coordinates
 def obtener_estado(latitud, longitud):
     try:
         location = geolocalizador.reverse(f"{latitud}, {longitud}")
