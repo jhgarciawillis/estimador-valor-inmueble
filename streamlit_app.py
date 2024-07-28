@@ -102,7 +102,7 @@ st.markdown(f"""
     }}
     .map-container {{
         width: 50%;
-        padding-top: 50%; /* This creates a 1:1 aspect ratio */
+        padding-top: 100%; /* This creates a 1:1 aspect ratio */
         position: relative;
         margin: 0 auto; /* Center the map */
     }}
