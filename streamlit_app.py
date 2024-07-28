@@ -46,7 +46,7 @@ st.markdown(f"""
     .stNumberInput > div > div > input {{
         color: {TEXT_COLOR};
         background-color: {INPUT_BACKGROUND};
-        border: 1px solid #4A4A4A;
+        border: 1px solid #272731;
         border-radius: 4px;
         padding: 8px 10px;
     }}
