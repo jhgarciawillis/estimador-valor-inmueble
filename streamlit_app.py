@@ -44,12 +44,17 @@ def get_mongo_client():
         return client
     except Exception as e:
         logger.error(f"Error de configuración de MongoDB: {str(e)}")
+        logger.exception("Detailed exception:")  # Add this line to log the full exception
         return None
 
 # Encryption setup
 def get_or_create_key():
-    key = "CD4A6EVjqVOEyztYRlE6qs5k5Wp8aTao3G6-zkPQNJw="
-    return Fernet(key.encode())
+    try:
+        return Fernet(st.secrets["encryption"]["key"].encode())
+    except KeyError:
+        logger.warning("Encryption key not found in secrets. Generating a new one.")
+        key = Fernet.generate_key()
+        return Fernet(key)
 
 fernet = get_or_create_key()
 
@@ -231,7 +236,7 @@ def predecir_precio(datos_procesados, modelos):
     try:
         precio_bruto = modelos['modelo'].predict(datos_procesados)[0]
         precio_ajustado = precio_bruto
-        precio_redondeado = math.floor((precio_ajustado * .65) / 1000) * 1000
+        precio_redondeado = math.floor((precio_ajustado * .63) / 1000) * 1000
 
         factor_escala_bajo = math.exp(-0.05)
         factor_escala_alto = math.exp(0.01 * math.log(precio_redondeado / 1000 + 1))
