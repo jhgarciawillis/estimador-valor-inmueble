@@ -106,31 +106,6 @@ st.markdown(f"""
         bottom: 0;
         right: 0;
     }}
-    .edit-button, .help-button, .change-button {{
-        background-color: transparent;
-        border: 1px solid {SECONDARY_COLOR};
-        color: {SECONDARY_COLOR};
-        cursor: pointer;
-        font-size: 12px;
-        padding: 2px 5px;
-        border-radius: 3px;
-        margin-left: 5px;
-    }}
-    .edit-button:hover, .help-button:hover, .change-button:hover {{
-        background-color: {SECONDARY_COLOR};
-        color: {PRIMARY_COLOR};
-    }}
-    .direccion-container {{
-        display: flex;
-        align-items: center;
-    }}
-    .input-container {{
-        display: flex;
-        align-items: center;
-    }}
-    .input-container > div {{
-        flex-grow: 1;
-    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -260,11 +235,7 @@ with st.container():
     with col1:
         # Tipo de propiedad
         st.markdown('<div class="etiqueta-entrada">Tipo de Propiedad</div>', unsafe_allow_html=True)
-        tipo_propiedad_col, help_col = st.columns([0.9, 0.1])
-        with tipo_propiedad_col:
-            tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad")
-        with help_col:
-            st.button("?", key="help_tipo_propiedad", help="Seleccione si es una casa en venta o un departamento en alquiler")
+        tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad")
 
         # Cargar modelos basados en el tipo de propiedad
         modelos = cargar_modelos(tipo_propiedad)
@@ -272,53 +243,26 @@ with st.container():
     with col2:
         # Dirección de la propiedad
         st.markdown('<div class="etiqueta-entrada">Dirección de la Propiedad</div>', unsafe_allow_html=True)
-        
-        if 'direccion_corregida' not in st.session_state:
-            st.session_state.direccion_corregida = ""
-        if 'editar_direccion' not in st.session_state:
-            st.session_state.editar_direccion = False
-        if 'sugerencias' not in st.session_state:
-            st.session_state.sugerencias = []
+        entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
 
-        def toggle_editar_direccion():
-            st.session_state.editar_direccion = not st.session_state.editar_direccion
-
-        if st.session_state.editar_direccion or not st.session_state.direccion_corregida:
-            entrada_direccion_col, help_col = st.columns([0.9, 0.1])
-            with entrada_direccion_col:
-                entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
-            with help_col:
-                st.button("?", key="help_direccion", help="Ingrese la dirección completa de la propiedad")
-            if entrada_direccion:
-                logger.debug(f"Dirección ingresada: {entrada_direccion}")
-                st.session_state.sugerencias = obtener_sugerencias_direccion(entrada_direccion)
-                if st.session_state.sugerencias:
-                    st.session_state.direccion_corregida = st.session_state.sugerencias[0]
-                    st.session_state.editar_direccion = False
-        else:
-            col1, col2, col3 = st.columns([0.8, 0.1, 0.1])
-            with col1:
-                st.text_input("", value=st.session_state.direccion_corregida, disabled=True, key="direccion_mostrada")
-            with col2:
-                if st.button("Cambiar", key="cambiar_direccion", help="Cambiar a otra dirección sugerida"):
-                    if st.session_state.sugerencias:
-                        current_index = st.session_state.sugerencias.index(st.session_state.direccion_corregida)
-                        next_index = (current_index + 1) % len(st.session_state.sugerencias)
-                        st.session_state.direccion_corregida = st.session_state.sugerencias[next_index]
-            with col3:
-                st.button("Editar", key="editar_direccion", on_click=toggle_editar_direccion, help="Editar dirección")
+        if entrada_direccion:
+            logger.debug(f"Dirección ingresada: {entrada_direccion}")
+            sugerencias = obtener_sugerencias_direccion(entrada_direccion)
+            if sugerencias:
+                st.markdown('<div class="etiqueta-entrada">Dirección Sugerida</div>', unsafe_allow_html=True)
+                direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida")
 
     # Geocodificación y mapa
     latitud, longitud = None, None
-    if st.session_state.direccion_corregida:
-        latitud, longitud, ubicacion = geocodificar_direccion(st.session_state.direccion_corregida)
+    if 'direccion_seleccionada' in locals():
+        latitud, longitud, ubicacion = geocodificar_direccion(direccion_seleccionada)
         if latitud and longitud:
-            st.success(f"Ubicación encontrada: {st.session_state.direccion_corregida}")
+            st.success(f"Ubicación encontrada: {direccion_seleccionada}")
             logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
             
             # Crear y mostrar el mapa responsivo
             m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
-            folium.Marker([latitud, longitud], popup=st.session_state.direccion_corregida).add_to(m)
+            folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
             folium_static(m)
         else:
             logger.warning("No se pudo geocodificar la dirección seleccionada")
@@ -329,72 +273,40 @@ with st.container():
 
     with col1:
         st.markdown('<div class="etiqueta-entrada">Terreno (m²)</div>', unsafe_allow_html=True)
-        terreno_col, help_col = st.columns([0.9, 0.1])
-        with terreno_col:
-            terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno")
-        with help_col:
-            st.button("?", key="help_terreno", help="Ingrese el área del terreno en metros cuadrados")
+        terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno")
 
     with col2:
         st.markdown('<div class="etiqueta-entrada">Construcción (m²)</div>', unsafe_allow_html=True)
-        construccion_col, help_col = st.columns([0.9, 0.1])
-        with construccion_col:
-            construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion")
-        with help_col:
-            st.button("?", key="help_construccion", help="Ingrese el área construida en metros cuadrados")
+        construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion")
 
     with col3:
         st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
-        habitaciones_col, help_col = st.columns([0.9, 0.1])
-        with habitaciones_col:
-            habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones")
-        with help_col:
-            st.button("?", key="help_habitaciones", help="Ingrese el número de habitaciones")
+        habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones")
 
     with col4:
         st.markdown('<div class="etiqueta-entrada">Baños</div>', unsafe_allow_html=True)
-        banos_col, help_col = st.columns([0.9, 0.1])
-        with banos_col:
-            banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
-        with help_col:
-            st.button("?", key="help_banos", help="Ingrese el número de baños (puede usar decimales, ej. 2.5 para dos baños completos y un medio baño)")
+        banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
 
     # Información personal
     col1, col2 = st.columns(2)
 
     with col1:
         st.markdown('<div class="etiqueta-entrada">Nombre</div>', unsafe_allow_html=True)
-        nombre_col, help_col = st.columns([0.9, 0.1])
-        with nombre_col:
-            nombre = st.text_input("", key="nombre", placeholder="Ingrese su nombre")
-        with help_col:
-            st.button("?", key="help_nombre", help="Ingrese su nombre")
+        nombre = st.text_input("", key="nombre", placeholder="Ingrese su nombre")
 
     with col2:
         st.markdown('<div class="etiqueta-entrada">Apellido</div>', unsafe_allow_html=True)
-        apellido_col, help_col = st.columns([0.9, 0.1])
-        with apellido_col:
-            apellido = st.text_input("", key="apellido", placeholder="Ingrese su apellido")
-        with help_col:
-            st.button("?", key="help_apellido", help="Ingrese su apellido")
+        apellido = st.text_input("", key="apellido", placeholder="Ingrese su apellido")
 
     col1, col2 = st.columns(2)
 
     with col1:
         st.markdown('<div class="etiqueta-entrada">Correo Electrónico</div>', unsafe_allow_html=True)
-        correo_col, help_col = st.columns([0.9, 0.1])
-        with correo_col:
-            correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com")
-        with help_col:
-            st.button("?", key="help_correo", help="Ingrese su dirección de correo electrónico")
+        correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com")
 
     with col2:
         st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
-        telefono_col, help_col = st.columns([0.9, 0.1])
-        with telefono_col:
-            telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
-        with help_col:
-            st.button("?", key="help_telefono", help="Ingrese su número de teléfono")
+        telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
         
     # Botón de cálculo
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
