@@ -266,9 +266,23 @@ def validar_telefono(telefono):
 def obtener_estado(latitud, longitud):
     try:
         location = geolocalizador.reverse(f"{latitud}, {longitud}")
+        logger.debug(f"Raw location data: {location.raw}")
         if location and 'address' in location.raw:
             address = location.raw['address']
-            return address.get('state', 'Estado no encontrado')
+            state = address.get('state', '')
+            if not state:
+                # Check for alternative keys that might contain the state information
+                for key in ['state_district', 'region', 'county']:
+                    if key in address:
+                        state = address[key]
+                        break
+            
+            # Special handling for Estado de México
+            if 'México' in state and 'Ciudad' not in state:
+                state = 'Estado de México'
+            
+            logger.debug(f"Extracted state: {state}")
+            return state if state else 'Estado no encontrado'
     except Exception as e:
         logger.error(f"Error al obtener el estado: {str(e)}")
     return 'Estado no encontrado'
