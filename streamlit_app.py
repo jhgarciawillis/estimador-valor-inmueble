@@ -240,6 +240,22 @@ with st.container():
                 st.markdown('<div class="etiqueta-entrada">Dirección Sugerida</div>', unsafe_allow_html=True)
                 direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida")
 
+    # Geocodificación y mapa
+    latitud, longitud = None, None
+    if 'direccion_seleccionada' in locals():
+        latitud, longitud, ubicacion = geocodificar_direccion(direccion_seleccionada)
+        if latitud and longitud:
+            st.success(f"Ubicación encontrada: {direccion_seleccionada}")
+            logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
+            
+            # Crear y mostrar el mapa responsivo
+            m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
+            folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
+            folium_static(m)
+        else:
+            logger.warning("No se pudo geocodificar la dirección seleccionada")
+            st.error("No se pudo geocodificar la dirección seleccionada.")
+
     # Detalles de la propiedad
     col1, col2, col3, col4 = st.columns(4)
 
@@ -275,22 +291,6 @@ with st.container():
 
         st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
         telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
-
-    # Geocodificación y mapa
-    latitud, longitud = None, None
-    if 'direccion_seleccionada' in locals():
-        latitud, longitud, ubicacion = geocodificar_direccion(direccion_seleccionada)
-        if latitud and longitud:
-            st.success(f"Ubicación encontrada: {direccion_seleccionada}")
-            logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
-            
-            # Crear y mostrar el mapa responsivo
-            m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
-            folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
-            folium_static(m)
-        else:
-            logger.warning("No se pudo geocodificar la dirección seleccionada")
-            st.error("No se pudo geocodificar la dirección seleccionada.")
         
     # Botón de cálculo
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
