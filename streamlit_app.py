@@ -231,7 +231,7 @@ def predecir_precio(datos_procesados, modelos):
     try:
         precio_bruto = modelos['modelo'].predict(datos_procesados)[0]
         precio_ajustado = precio_bruto
-        precio_redondeado = math.floor((precio_ajustado * .7) / 1000) * 1000
+        precio_redondeado = math.floor((precio_ajustado * .65) / 1000) * 1000
 
         factor_escala_bajo = math.exp(-0.05)
         factor_escala_alto = math.exp(0.01 * math.log(precio_redondeado / 1000 + 1))
