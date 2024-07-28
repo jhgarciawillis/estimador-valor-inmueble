@@ -25,6 +25,7 @@ SECONDARY_COLOR = "#FFD700"  # Gold
 BACKGROUND_COLOR = "#1E1E1E"  # Dark background
 TEXT_COLOR = "#FFFFFF"  # White text
 ACCENT_COLOR = "#4CAF50"  # Green
+INPUT_BACKGROUND = "#272731"  # New input background color
 
 # CSS personalizado
 st.markdown(f"""
@@ -44,7 +45,7 @@ st.markdown(f"""
     .stSelectbox > div > div > select,
     .stNumberInput > div > div > input {{
         color: {TEXT_COLOR};
-        background-color: #2D2D2D;
+        background-color: {INPUT_BACKGROUND};
         border: 1px solid #4A4A4A;
         border-radius: 4px;
         padding: 8px 10px;
@@ -69,12 +70,19 @@ st.markdown(f"""
         background-color: {SECONDARY_COLOR};
         color: {PRIMARY_COLOR};
     }}
-    h1 {{
-        color: {PRIMARY_COLOR};
+    .title-banner {{
+        background-color: {PRIMARY_COLOR};
+        color: {TEXT_COLOR};
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+        margin-bottom: 20px;
+    }}
+    .title-banner h1 {{
+        color: {TEXT_COLOR};
         font-size: 28px;
         font-weight: bold;
-        margin-bottom: 20px;
-        text-align: center;
+        margin: 0;
     }}
     .etiqueta-entrada {{
         font-size: 14px;
@@ -205,7 +213,7 @@ def validar_telefono(telefono):
     return re.match(patron, telefono) is not None
 
 # Interfaz de usuario
-st.title("Estimador de Valor de Propiedades")
+st.markdown('<div class="title-banner"><h1>Estimador de Valor de Propiedades</h1></div>', unsafe_allow_html=True)
 
 # Contenedor principal
 with st.container():
