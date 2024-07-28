@@ -101,9 +101,10 @@ st.markdown(f"""
         border-radius: 5px;
     }}
     .map-container {{
-        width: 100%;
-        padding-top: 100%; /* This creates a 1:1 aspect ratio */
+        width: 50%;
+        padding-top: 50%; /* This creates a 1:1 aspect ratio */
         position: relative;
+        margin: 0 auto; /* Center the map */
     }}
     .map-container .folium-map {{
         position: absolute;
@@ -285,8 +286,6 @@ if 'direccion_seleccionada' not in st.session_state:
 # Interfaz de usuario
 st.markdown('<div class="title-banner"><h1>Estimador de Valor de Propiedades</h1></div>', unsafe_allow_html=True)
 
-# Continuing from where we left off...
-
 # Contenedor principal
 with st.container():
 
@@ -316,7 +315,9 @@ with st.container():
             # Crear y mostrar el mapa responsivo
             m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
             folium.Marker([latitud, longitud], popup=st.session_state.direccion_seleccionada).add_to(m)
+            st.markdown('<div class="map-container">', unsafe_allow_html=True)
             folium_static(m)
+            st.markdown('</div>', unsafe_allow_html=True)
         else:
             logger.warning("No se pudo geocodificar la dirección seleccionada")
             st.error("No se pudo geocodificar la dirección seleccionada.")
