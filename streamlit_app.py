@@ -262,6 +262,17 @@ def validar_telefono(telefono):
     patron = r'^\+?[1-9]\d{1,14}$'
     return re.match(patron, telefono) is not None
 
+# Function to get the state from coordinates
+def obtener_estado(latitud, longitud):
+    try:
+        location = geolocalizador.reverse(f"{latitud}, {longitud}")
+        if location and 'address' in location.raw:
+            address = location.raw['address']
+            return address.get('state', 'Estado no encontrado')
+    except Exception as e:
+        logger.error(f"Error al obtener el estado: {str(e)}")
+    return 'Estado no encontrado'
+
 # Callback function for address input
 def on_address_change():
     st.session_state.sugerencias = obtener_sugerencias_direccion(st.session_state.entrada_direccion)
@@ -279,6 +290,8 @@ if 'direccion_seleccionada' not in st.session_state:
     st.session_state.direccion_seleccionada = ""
 if 'mostrar_mapa' not in st.session_state:
     st.session_state.mostrar_mapa = False
+if 'estado' not in st.session_state:
+    st.session_state.estado = ""
 
 # Interfaz de usuario
 st.markdown('<div class="title-banner"><h1>Estimador de Valor de Propiedades</h1></div>', unsafe_allow_html=True)
@@ -301,7 +314,7 @@ with st.container():
         st.markdown(create_tooltip("Dirección de la Propiedad", "Ingrese la dirección completa de la propiedad."), unsafe_allow_html=True)
         st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México", on_change=on_address_change)
 
-    # Geocodificación y mapa
+    # Geocodificación, mapa y estado
     latitud, longitud = None, None
     if st.session_state.direccion_seleccionada:
         latitud, longitud, ubicacion = geocodificar_direccion(st.session_state.direccion_seleccionada)
@@ -309,9 +322,19 @@ with st.container():
             st.success(f"Ubicación encontrada: {st.session_state.direccion_seleccionada}")
             logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
             
-            # Botón para mostrar/ocultar el mapa
-            if st.button("Mostrar/Ocultar Mapa"):
-                st.session_state.mostrar_mapa = not st.session_state.mostrar_mapa
+            # Obtener y mostrar el estado
+            st.session_state.estado = obtener_estado(latitud, longitud)
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown(create_tooltip("Estado", "Estado determinado automáticamente basado en la dirección."), unsafe_allow_html=True)
+                st.text_input("", value=st.session_state.estado, key="estado_input", disabled=True)
+            
+            with col2:
+                # Botón para mostrar/ocultar el mapa
+                if st.button("Mostrar/Ocultar Mapa"):
+                    st.session_state.mostrar_mapa = not st.session_state.mostrar_mapa
 
             # Mostrar el mapa solo si el botón ha sido presionado
             if st.session_state.mostrar_mapa:
