@@ -104,7 +104,7 @@ st.markdown(f"""
         top: 0;
         left: 0;
         bottom: 0;
-        right: 100px;
+        right: 500px;
     }}
 </style>
 """, unsafe_allow_html=True)
