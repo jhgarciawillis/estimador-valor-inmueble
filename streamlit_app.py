@@ -20,7 +20,7 @@ from datetime import datetime
 from cryptography.fernet import Fernet
 import json
 from pymongo import MongoClient
-from pymongo.errors import ConfigurationError
+from pymongo.server_api import ServerApi
 
 # Configurar registro
 logging.basicConfig(level=logging.DEBUG)
@@ -30,8 +30,12 @@ logger = logging.getLogger(__name__)
 @st.cache_resource
 def get_mongo_client():
     try:
-        return MongoClient(st.secrets["mongo"]["connection_string"])
-    except ConfigurationError as e:
+        client = MongoClient(st.secrets["mongo"]["connection_string"], server_api=ServerApi('1'))
+        # Send a ping to confirm a successful connection
+        client.admin.command('ping')
+        logger.info("Successfully connected to MongoDB!")
+        return client
+    except Exception as e:
         logger.error(f"Error de configuración de MongoDB: {str(e)}")
         return None
 
