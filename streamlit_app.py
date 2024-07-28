@@ -228,13 +228,10 @@ with st.container():
         # Cargar modelos basados en el tipo de propiedad
         modelos = cargar_modelos(tipo_propiedad)
 
+    with col2:
         # Dirección de la propiedad
         st.markdown('<div class="etiqueta-entrada">Dirección de la Propiedad</div>', unsafe_allow_html=True)
         entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
-
-    with col2:
-        # Placeholder para mantener el alineamiento
-        st.markdown('<div style="height: 76px;"></div>', unsafe_allow_html=True)
 
         if entrada_direccion:
             logger.debug(f"Dirección ingresada: {entrada_direccion}")
