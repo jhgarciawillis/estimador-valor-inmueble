@@ -5,103 +5,16 @@ import joblib
 import os
 import math
 import plotly.graph_objects as go
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.cluster import KMeans
-from sklearn import __version__ as sklearn_version
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
 import folium
 from streamlit_folium import folium_static
 import re
 import logging
-from datetime import datetime
-from cryptography.fernet import Fernet
-import json
-from pymongo import MongoClient
-from pymongo.server_api import ServerApi
-import certifi
-import ssl
 
 # Configurar registro
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-# MongoDB connection
-@st.cache_resource
-def get_mongo_client():
-    try:
-        logger.debug("Connecting to MongoDB...")
-        client = MongoClient(
-            st.secrets["mongo"]["connection_string"],
-            server_api=ServerApi('1'),
-            tlsCAFile=certifi.where()
-        )
-        logger.debug("MongoDB connection established")
-        
-        # Send a ping to confirm a successful connection
-        logger.debug("Sending ping to MongoDB")
-        client.admin.command('ping')
-        logger.info("Successfully connected to MongoDB!")
-        
-        return client
-    except Exception as e:
-        logger.error(f"Error de configuración de MongoDB: {str(e)}")
-        logger.exception("Detailed exception:")
-        return None
-
-# Encryption setup
-def get_or_create_key():
-    try:
-        return Fernet(st.secrets["encryption"]["key"].encode())
-    except KeyError:
-        logger.warning("Encryption key not found in secrets. Generating a new one.")
-        key = Fernet.generate_key()
-        return Fernet(key)
-
-fernet = get_or_create_key()
-
-def encrypt_data(data):
-    return fernet.encrypt(json.dumps(data).encode()).decode()
-
-def decrypt_data(encrypted_data):
-    return json.loads(fernet.decrypt(encrypted_data.encode()).decode())
-
-def store_data(data):
-    encrypted_data = encrypt_data(data)
-    client = get_mongo_client()
-    if client:
-        try:
-            db = client.property_database
-            collection = db.property_data
-            logger.debug(f"Inserting data into MongoDB: {encrypted_data}")
-            result = collection.insert_one({"timestamp": datetime.now().isoformat(), "data": encrypted_data})
-            logger.debug(f"Inserted document ID: {result.inserted_id}")
-            logger.info("Data stored successfully")
-        except Exception as e:
-            logger.error(f"Error al almacenar datos: {str(e)}")
-            logger.exception("Detailed exception:")
-        finally:
-            logger.debug("Closing MongoDB connection")
-            client.close()
-    else:
-        logger.error("No se pudo conectar a MongoDB. Los datos no se almacenaron.")
-
-def retrieve_data():
-    client = get_mongo_client()
-    if client:
-        try:
-            db = client.property_database
-            collection = db.property_data
-            for doc in collection.find():
-                yield doc['timestamp'], decrypt_data(doc['data'])
-        except Exception as e:
-            logger.error(f"Error al recuperar datos: {str(e)}")
-        finally:
-            client.close()
-    else:
-        logger.error("No se pudo conectar a MongoDB")
 
 # Configuración de la página
 st.set_page_config(page_title="Estimador de Valor de Propiedades", layout="wide")
@@ -114,10 +27,15 @@ st.markdown("""
         background-color: #1E1E1E;
         font-family: 'Roboto', sans-serif;
     }
-    .widget-container {
+    .stApp {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .contenedor-principal {
         background-color: #2D2D2D;
         border-radius: 10px;
-        padding: 20px;
+        padding: 30px;
         margin-bottom: 20px;
     }
     .stTextInput > div > div > input,
@@ -128,7 +46,6 @@ st.markdown("""
         border: 1px solid #4A4A4A;
         border-radius: 4px;
         padding: 8px 10px;
-        width: 100%;
     }
     .stButton > button {
         width: 100%;
@@ -144,12 +61,6 @@ st.markdown("""
         font-size: 14px;
         color: #B0B0B0;
         margin-bottom: 5px;
-    }
-    .folium-map {
-        width: 100%;
-        height: 300px;
-        max-width: 600px;
-        margin: 0 auto;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -244,7 +155,7 @@ def predecir_precio(datos_procesados, modelos):
     try:
         precio_bruto = modelos['modelo'].predict(datos_procesados)[0]
         precio_ajustado = precio_bruto
-        precio_redondeado = math.floor((precio_ajustado * .7) / 1000) * 1000
+        precio_redondeado = math.floor((precio_ajustado * .77) / 1000) * 1000
 
         factor_escala_bajo = math.exp(-0.05)
         factor_escala_alto = math.exp(0.01 * math.log(precio_redondeado / 1000 + 1))
@@ -274,18 +185,18 @@ st.title("Estimador de Valor de Propiedades")
 
 # Contenedor principal
 with st.container():
-    st.markdown('<div class="widget-container">', unsafe_allow_html=True)
+    st.markdown('<div class="contenedor-principal">', unsafe_allow_html=True)
 
     # Tipo de propiedad
     st.markdown('<div class="etiqueta-entrada">Tipo de Propiedad</div>', unsafe_allow_html=True)
-    tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad", help="Seleccione el tipo de propiedad")
+    tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad")
 
     # Cargar modelos basados en el tipo de propiedad
     modelos = cargar_modelos(tipo_propiedad)
 
     # Dirección de la propiedad
     st.markdown('<div class="etiqueta-entrada">Dirección de la Propiedad</div>', unsafe_allow_html=True)
-    entrada_direccion = st.text_input("", key="entrada_direccion", help="Ingrese la dirección completa de la propiedad")
+    entrada_direccion = st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México")
 
     latitud, longitud = None, None
 
@@ -294,7 +205,7 @@ with st.container():
         sugerencias = obtener_sugerencias_direccion(entrada_direccion)
         if sugerencias:
             st.markdown('<div class="etiqueta-entrada">Dirección Sugerida</div>', unsafe_allow_html=True)
-            direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida", help="Seleccione la dirección correcta de las sugerencias")
+            direccion_seleccionada = st.selectbox("", sugerencias, index=0, key="direccion_sugerida")
             if direccion_seleccionada:
                 latitud, longitud, ubicacion = geocodificar_direccion(direccion_seleccionada)
                 if latitud and longitud:
@@ -304,7 +215,7 @@ with st.container():
                     # Crear y mostrar el mapa responsivo
                     m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
                     folium.Marker([latitud, longitud], popup=direccion_seleccionada).add_to(m)
-                    folium_static(m, width=300, height=200)
+                    folium_static(m)
                 else:
                     logger.warning("No se pudo geocodificar la dirección seleccionada")
                     st.error("No se pudo geocodificar la dirección seleccionada.")
@@ -314,25 +225,25 @@ with st.container():
 
     with col1:
         st.markdown('<div class="etiqueta-entrada">Terreno (m²)</div>', unsafe_allow_html=True)
-        terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno", help="Área total del terreno en metros cuadrados")
+        terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno")
 
-        st.markdown('<div class="etiqueta-entrada">Construcción (m²)</div>', unsafe_allow_html=True)
-        construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion", help="Área construida en metros cuadrados")
+        st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
+        habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones")
 
     with col2:
-        st.markdown('<div class="etiqueta-entrada">Habitaciones</div>', unsafe_allow_html=True)
-        habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones", help="Número de habitaciones")
+        st.markdown('<div class="etiqueta-entrada">Construcción (m²)</div>', unsafe_allow_html=True)
+        construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion")
 
         st.markdown('<div class="etiqueta-entrada">Baños</div>', unsafe_allow_html=True)
-        banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos", help="Número de baños (use decimales para medios baños)")
+        banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
 
     # Campos de correo electrónico y teléfono
     st.markdown('<div class="etiqueta-entrada">Correo Electrónico</div>', unsafe_allow_html=True)
-    correo = st.text_input("", key="correo", help="Ingrese su dirección de correo electrónico")
+    correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com")
 
     st.markdown('<div class="etiqueta-entrada">Teléfono</div>', unsafe_allow_html=True)
-    telefono = st.text_input("", key="telefono", help="Ingrese su número de teléfono")
-
+    telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
+        
     # Botón de cálculo
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
     if st.button(texto_boton, key="boton_calcular"):
@@ -345,6 +256,8 @@ with st.container():
             st.error("Por favor, ingrese un número de teléfono válido.")
         elif latitud and longitud and terreno and construccion and habitaciones and banos:
             logger.debug("Todos los campos requeridos están completos")
+            # Aquí puedes guardar el correo y teléfono en tu base de datos o sistema de almacenamiento
+            st.success(f"Detalles de contacto guardados: Correo: {correo}, Teléfono: {telefono}")
             
             datos_procesados = preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos)
             if datos_procesados is not None:
@@ -356,31 +269,6 @@ with st.container():
                     else:
                         st.markdown(f"<h3 style='color: #50E3C2;'>Renta Mensual Estimada: ${precio:,}</h3>", unsafe_allow_html=True)
                         st.markdown(f"<p style='color: #B0B0B0;'>Rango de Renta Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
-
-                    # Prepare data to store
-                    data_to_store = {
-                        "tipo_propiedad": tipo_propiedad,
-                        "direccion": direccion_seleccionada,
-                        "latitud": latitud,
-                        "longitud": longitud,
-                        "terreno": terreno,
-                        "construccion": construccion,
-                        "habitaciones": habitaciones,
-                        "banos": banos,
-                        "correo": correo,
-                        "telefono": telefono,
-                        "precio_estimado": precio,
-                        "precio_min": precio_min,
-                        "precio_max": precio_max
-                    }
-
-                    # Store data
-                    try:
-                        store_data(data_to_store)
-                        logger.info("Datos almacenados exitosamente")
-                    except Exception as e:
-                        logger.error(f"Error al almacenar datos: {str(e)}")
-                        # No mostramos el error al usuario para mantener la experiencia sin problemas
 
                     # Gráfico de barras para visualizar el rango de precios
                     fig = go.Figure(go.Bar(
