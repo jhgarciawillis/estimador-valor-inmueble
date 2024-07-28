@@ -78,7 +78,7 @@ st.markdown(f"""
     }}
     .etiqueta-entrada {{
         font-size: 14px;
-        color: {PRIMARYY_COLOR};
+        color: {PRIMARY_COLOR};
         margin-bottom: 5px;
         font-weight: bold;
     }}
