@@ -270,16 +270,20 @@ def obtener_estado(latitud, longitud):
         if location and 'address' in location.raw:
             address = location.raw['address']
             state = address.get('state', '')
+            
+            # Check for alternative keys that might contain the state information
             if not state:
-                # Check for alternative keys that might contain the state information
                 for key in ['state_district', 'region', 'county']:
                     if key in address:
                         state = address[key]
                         break
             
-            # Special handling for Estado de México
-            if 'México' in state and 'Ciudad' not in state:
-                state = 'Estado de México'
+            # Special handling for Ciudad de México and Estado de México
+            if 'México' in state:
+                if any(city in state.lower() for city in ['ciudad de méxico', 'ciudad de mexico', 'cdmx', 'df']):
+                    state = 'Ciudad de México'
+                elif 'estado' in state.lower() or (state.lower() == 'méxico' and address.get('country') == 'México'):
+                    state = 'Estado de México'
             
             logger.debug(f"Extracted state: {state}")
             return state if state else 'Estado no encontrado'
