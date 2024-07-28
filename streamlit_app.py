@@ -95,8 +95,8 @@ st.markdown(f"""
         border-radius: 5px;
     }}
     .map-container {{
-        width: 200%;
-        padding-top: 200%; /* This creates a 1:1 aspect ratio */
+        width: 100%;
+        padding-top: 100%; /* This creates a 1:1 aspect ratio */
         position: relative;
     }}
     .map-container .folium-map {{
@@ -104,7 +104,7 @@ st.markdown(f"""
         top: 0;
         left: 0;
         bottom: 0;
-        right: 0;
+        right: 100px;
     }}
 </style>
 """, unsafe_allow_html=True)
