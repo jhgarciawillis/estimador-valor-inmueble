@@ -71,7 +71,7 @@ st.markdown(f"""
         color: {PRIMARY_COLOR};
     }}
     .title-banner {{
-        background-color: {TEXT_COLOR};
+        background-color: {PRIMARY_COLOR};
         color: {TEXT_COLOR};
         padding: 20px;
         border-radius: 5px;
@@ -86,7 +86,7 @@ st.markdown(f"""
     }}
     .etiqueta-entrada {{
         font-size: 14px;
-        color: {PRIMARY_COLOR};
+        color: {TEXT_COLOR};
         margin-bottom: 5px;
         font-weight: bold;
     }}
