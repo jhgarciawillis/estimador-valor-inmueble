@@ -169,6 +169,9 @@ def cargar_modelos(tipo_propiedad):
                 logger.error(f"Archivo de modelo no encontrado: {ruta_archivo}")
                 raise FileNotFoundError(f"Archivo de modelo no encontrado: {ruta_archivo}")
         logger.debug("Modelos cargados exitosamente")
+    except ImportError as e:
+        logger.error(f"Error al importar una biblioteca necesaria: {str(e)}")
+        st.error(f"Error al cargar los modelos: {str(e)}. Asegúrese de que todas las dependencias estén instaladas.")
     except Exception as e:
         logger.error(f"Error al cargar los modelos: {str(e)}")
         st.error(f"Error al cargar los modelos: {str(e)}. Por favor contacte al soporte.")
