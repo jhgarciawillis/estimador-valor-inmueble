@@ -379,8 +379,7 @@ with st.container():
             "Estoy buscando activamente vender/alquilar mi propiedad.",
             "Necesito vender/alquilar mi propiedad lo antes posible."
         ],
-        key="interes_venta",
-        required=True
+        key="interes_venta"
     )
 
     # Botón de cálculo
