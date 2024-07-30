@@ -368,6 +368,21 @@ with st.container():
         st.markdown(create_tooltip("Teléfono", "Ingrese su número de teléfono."), unsafe_allow_html=True)
         telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
         
+    # Nuevo campo: Interés en vender
+    st.markdown(create_tooltip("Interés en Vender/Alquilar", "Seleccione su nivel de interés en vender o alquilar la propiedad."), unsafe_allow_html=True)
+    interes_venta = st.radio(
+        "",
+        [
+            "Solo estoy explorando el valor de mi propiedad por curiosidad.",
+            "Podría considerar vender/alquilar en el futuro.",
+            "Estoy interesado/a en vender/alquilar, pero no tengo prisa.",
+            "Estoy buscando activamente vender/alquilar mi propiedad.",
+            "Necesito vender/alquilar mi propiedad lo antes posible."
+        ],
+        key="interes_venta",
+        required=True
+    )
+
     # Botón de cálculo
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
     if st.button(texto_boton, key="boton_calcular"):
@@ -380,6 +395,8 @@ with st.container():
         elif not validar_telefono(telefono):
             logger.warning(f"Teléfono inválido: {telefono}")
             st.error("Por favor, ingrese un número de teléfono válido.")
+        elif not interes_venta:
+            st.error("Por favor, seleccione su nivel de interés en vender/alquilar.")
         elif latitud and longitud and terreno and construccion and habitaciones and banos:
             logger.debug("Todos los campos requeridos están completos")
             
@@ -411,6 +428,9 @@ with st.container():
                         yaxis=dict(tickfont=dict(color=TEXT_COLOR))
                     )
                     st.plotly_chart(fig)
+
+                    # Mostrar el nivel de interés seleccionado
+                    st.markdown(f"<p style='color: {TEXT_COLOR};'>Nivel de interés: {interes_venta}</p>", unsafe_allow_html=True)
                 else:
                     logger.error("Error predicting the price")
                     st.error("Hubo un error al calcular el precio. Por favor, inténtelo de nuevo.")
