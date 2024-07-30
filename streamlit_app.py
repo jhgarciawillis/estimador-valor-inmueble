@@ -302,7 +302,7 @@ with st.container():
     with col2:
         # Dirección de la propiedad
         st.markdown(create_tooltip("Dirección de la Propiedad", "Ingrese la dirección completa de la propiedad."), unsafe_allow_html=True)
-        st.text_input("", key="entrada_direccion", placeholder="Ej., Calle Principal 123, Ciudad de México", on_change=on_address_change)
+        st.text_input("", key="entrada_direccion", placeholder="Calle Principal 123, Ciudad de México", on_change=on_address_change)
 
     # Geocodificación y mapa
     latitud, longitud = None, None
@@ -362,11 +362,11 @@ with st.container():
 
     with col1:
         st.markdown(create_tooltip("Correo Electrónico", "Ingrese su dirección de correo electrónico."), unsafe_allow_html=True)
-        correo = st.text_input("", key="correo", placeholder="Ej., usuario@ejemplo.com")
+        correo = st.text_input("", key="correo", placeholder="usuario@ejemplo.com")
 
     with col2:
         st.markdown(create_tooltip("Teléfono", "Ingrese su número de teléfono."), unsafe_allow_html=True)
-        telefono = st.text_input("", key="telefono", placeholder="Ej., 1234567890")
+        telefono = st.text_input("", key="telefono", placeholder="9214447277")
         
     # Nuevo campo: Interés en vender
     st.markdown(create_tooltip("Interés en Vender/Alquilar", "Seleccione su nivel de interés en vender o alquilar la propiedad."), unsafe_allow_html=True)
