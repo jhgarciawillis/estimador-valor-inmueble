@@ -12,114 +12,35 @@ from streamlit_folium import folium_static
 import re
 import logging
 
-# Configurar registro
+# Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Configuración de la página
+# Page configuration
 st.set_page_config(page_title="Estimador de Valor de Propiedades", layout="wide")
 
-# Color palette for real estate agency
-PRIMARY_COLOR = "#003366"  # Deep blue
-SECONDARY_COLOR = "#FFD700"  # Gold
-BACKGROUND_COLOR = "#1E1E1E"  # Dark background
-TEXT_COLOR = "#FFFFFF"  # White text
-ACCENT_COLOR = "#4CAF50"  # Green
-INPUT_BACKGROUND = "#272731"  # New input background color
+# Basic color scheme
+PRIMARY_COLOR = "#1f77b4"  # Blue
+SECONDARY_COLOR = "#2ca02c"  # Green
 
-# CSS personalizado
-st.markdown(f"""
+# Simple CSS
+st.markdown("""
 <style>
-    body {{
-        color: {TEXT_COLOR};
-        background-color: {BACKGROUND_COLOR};
-        font-family: 'Nunito', sans-serif;
-    }}
-    .stApp {{
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-    }}
-
-    .stTextInput > div > div > input,
-    .stSelectbox > div > div > select,
-    .stNumberInput > div > div > input {{
-        color: {TEXT_COLOR};
-        background-color: {INPUT_BACKGROUND};
-        border: 1px solid #272731;
-        border-radius: 4px;
-        padding: 8px 10px;
-    }}
-    .stTextInput > div > div > input:focus,
-    .stSelectbox > div > div > select:focus,
-    .stNumberInput > div > div > input:focus {{
-        border-color: {SECONDARY_COLOR};
-        box-shadow: 0 0 0 1px {SECONDARY_COLOR};
-    }}
-    .stButton > button {{
-        width: 100%;
-        background-color: {PRIMARY_COLOR};
-        color: white;
-        font-weight: bold;
-        border: none;
-        padding: 10px 15px;
-        border-radius: 5px;
-        transition: background-color 0.3s;
-    }}
-    .stButton > button:hover {{
-        background-color: {SECONDARY_COLOR};
-        color: {PRIMARY_COLOR};
-    }}
-    .title-banner {{
-        background-color: {PRIMARY_COLOR};
-        color: {TEXT_COLOR};
-        padding: 20px;
-        border-radius: 5px;
-        text-align: center;
-        margin-bottom: 20px;
-    }}
-    .title-banner h1 {{
-        color: {TEXT_COLOR};
-        font-size: 28px;
-        font-weight: bold;
-        margin: 0;
-    }}
-    .etiqueta-entrada {{
-        font-size: 14px;
-        color: {TEXT_COLOR};
-        margin-bottom: 5px;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-    }}
-    .etiqueta-entrada .tooltip {{
-        margin-left: 5px;
-        cursor: help;
-    }}
-    .stExpander {{
-        border: 1px solid {SECONDARY_COLOR};
-        border-radius: 5px;
-    }}
-
-    .map-container .folium-map {{
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-    }}
-    .tooltip {{
+    .tooltip {
         position: relative;
         display: inline-block;
-    }}
-    .tooltip .tooltiptext {{
+        margin-left: 5px;
+    }
+    
+    .tooltip .tooltiptext {
         visibility: hidden;
         width: 200px;
-        background-color: {PRIMARY_COLOR};
-        color: {TEXT_COLOR};
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        color: black;
         text-align: center;
-        border-radius: 6px;
         padding: 5px;
+        border-radius: 4px;
         position: absolute;
         z-index: 1;
         bottom: 125%;
@@ -127,18 +48,25 @@ st.markdown(f"""
         margin-left: -100px;
         opacity: 0;
         transition: opacity 0.3s;
-    }}
-    .tooltip:hover .tooltiptext {{
+    }
+    
+    .tooltip:hover .tooltiptext {
         visibility: visible;
         opacity: 1;
-    }}
+    }
+    
+    .label-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Function to create a tooltip
+# Utility functions
 def create_tooltip(label, explanation):
     return f"""
-    <div class="etiqueta-entrada">
+    <div class="label-container">
         {label}
         <div class="tooltip">
             <span>❔</span>
@@ -147,7 +75,6 @@ def create_tooltip(label, explanation):
     </div>
     """
 
-# Cargar modelos y herramientas
 @st.cache_resource
 def cargar_modelos(tipo_propiedad):
     directorio_actual = os.path.dirname(os.path.abspath(__file__))
@@ -168,16 +95,12 @@ def cargar_modelos(tipo_propiedad):
             else:
                 logger.error(f"Archivo de modelo no encontrado: {ruta_archivo}")
                 raise FileNotFoundError(f"Archivo de modelo no encontrado: {ruta_archivo}")
-        logger.debug("Modelos cargados exitosamente")
-    except ImportError as e:
-        logger.error(f"Error al importar una biblioteca necesaria: {str(e)}")
-        st.error(f"Error al cargar los modelos: {str(e)}. Asegúrese de que todas las dependencias estén instaladas.")
     except Exception as e:
         logger.error(f"Error al cargar los modelos: {str(e)}")
         st.error(f"Error al cargar los modelos: {str(e)}. Por favor contacte al soporte.")
     return modelos
 
-# Inicializar geocodificador
+# Initialize geocoder
 geolocalizador = Nominatim(user_agent="aplicacion_propiedades")
 
 def geocodificar_direccion(direccion):
@@ -196,7 +119,6 @@ def obtener_sugerencias_direccion(consulta):
     try:
         ubicaciones = geolocalizador.geocode(consulta + ", México", exactly_one=False, limit=5)
         if ubicaciones:
-            logger.debug(f"Sugerencias obtenidas: {len(ubicaciones)}")
             return [ubicacion.address for ubicacion in ubicaciones]
     except (GeocoderTimedOut, GeocoderUnavailable):
         logger.warning("Servicio de geocodificación no disponible")
@@ -225,11 +147,8 @@ def preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, ba
             'GrupoUbicacion': [grupo_ubicacion],
         })
         
-        logger.debug(f"Datos de entrada: {datos_entrada}")
-        
         datos_imputados = modelos['imputador'].transform(datos_entrada)
         datos_escalados = modelos['escalador'].transform(datos_imputados)
-        logger.debug("Datos preprocesados exitosamente")
         return pd.DataFrame(datos_escalados, columns=datos_entrada.columns)
     except Exception as e:
         logger.error(f"Error al preprocesar datos: {str(e)}")
@@ -248,10 +167,6 @@ def predecir_precio(datos_procesados, modelos):
         rango_precio_min = max(0, math.floor((precio_redondeado * factor_escala_bajo) / 1000) * 1000)
         rango_precio_max = math.ceil((precio_redondeado * factor_escala_alto) / 1000) * 1000
 
-        rango_precio_min = min(rango_precio_min, precio_redondeado)
-        rango_precio_max = max(rango_precio_max, precio_redondeado)
-
-        logger.debug(f"Precio predicho: {precio_redondeado}, Rango: {rango_precio_min} - {rango_precio_max}")
         return precio_redondeado, rango_precio_min, rango_precio_max
     except Exception as e:
         logger.error(f"Error al predecir el precio: {str(e)}")
@@ -265,7 +180,6 @@ def validar_telefono(telefono):
     patron = r'^\+?[1-9]\d{1,14}$'
     return re.match(patron, telefono) is not None
 
-# Callback function for address input
 def on_address_change():
     st.session_state.sugerencias = obtener_sugerencias_direccion(st.session_state.entrada_direccion)
     if st.session_state.sugerencias:
@@ -273,7 +187,7 @@ def on_address_change():
     else:
         st.session_state.direccion_seleccionada = ""
 
-# Initialize session state variables
+# Initialize session state
 if 'entrada_direccion' not in st.session_state:
     st.session_state.entrada_direccion = ""
 if 'sugerencias' not in st.session_state:
@@ -283,71 +197,75 @@ if 'direccion_seleccionada' not in st.session_state:
 if 'mostrar_mapa' not in st.session_state:
     st.session_state.mostrar_mapa = False
 
-# Interfaz de usuario
-st.markdown('<div class="title-banner"><h1>Estimador de Valor de Propiedades</h1></div>', unsafe_allow_html=True)
+# Main UI
+st.title("Estimador de Valor de Propiedades")
 
-# Contenedor principal
+# Main container
 with st.container():
-
     col1, col2 = st.columns(2)
-
+    
     with col1:
-        # Tipo de propiedad
-        st.markdown(create_tooltip("Tipo de Propiedad", "Seleccione si es una casa en venta o un departamento en alquiler."), unsafe_allow_html=True)
-        tipo_propiedad = st.selectbox("", ["Casa", "Departamento"], key="tipo_propiedad")
-
-        # Cargar modelos basados en el tipo de propiedad
+        st.markdown(create_tooltip("Tipo de Propiedad", 
+                                 "Seleccione si es una casa en venta o un departamento en alquiler."), 
+                   unsafe_allow_html=True)
+        tipo_propiedad = st.selectbox("", ["Casa", "Departamento"])
         modelos = cargar_modelos(tipo_propiedad)
-
+    
     with col2:
-        # Dirección de la propiedad
-        st.markdown(create_tooltip("Dirección de la Propiedad", "Ingrese la dirección completa de la propiedad."), unsafe_allow_html=True)
-        st.text_input("", key="entrada_direccion", placeholder="Calle Principal 123, Ciudad de México", on_change=on_address_change)
+        st.markdown(create_tooltip("Dirección de la Propiedad", 
+                                 "Ingrese la dirección completa de la propiedad."), 
+                   unsafe_allow_html=True)
+        st.text_input("", key="entrada_direccion", 
+                     placeholder="Calle Principal 123, Ciudad de México", 
+                     on_change=on_address_change)
 
-    # Geocodificación y mapa
+# Geocodificación y mapa
     latitud, longitud = None, None
     if st.session_state.direccion_seleccionada:
         latitud, longitud, ubicacion = geocodificar_direccion(st.session_state.direccion_seleccionada)
         if latitud and longitud:
             st.success(f"Ubicación encontrada: {st.session_state.direccion_seleccionada}")
-            logger.debug(f"Ubicación encontrada: Lat {latitud}, Lon {longitud}")
             
-            # Botón para mostrar/ocultar el mapa
             if st.button("Mostrar/Ocultar Mapa"):
                 st.session_state.mostrar_mapa = not st.session_state.mostrar_mapa
 
-            # Mostrar el mapa solo si el botón ha sido presionado
             if st.session_state.mostrar_mapa:
-                # Crear y mostrar el mapa responsivo
-                m = folium.Map(location=[latitud, longitud], zoom_start=15, tiles="CartoDB dark_matter")
+                m = folium.Map(location=[latitud, longitud], zoom_start=15)
                 folium.Marker([latitud, longitud], popup=st.session_state.direccion_seleccionada).add_to(m)
-                st.markdown('<div class="map-container">', unsafe_allow_html=True)
                 folium_static(m)
-                st.markdown('</div>', unsafe_allow_html=True)
         else:
-            logger.warning("No se pudo geocodificar la dirección seleccionada")
             st.error("No se pudo geocodificar la dirección seleccionada.")
 
     # Detalles de la propiedad
+    st.subheader("Detalles de la Propiedad")
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.markdown(create_tooltip("Terreno (m²)", "Ingrese el área total del terreno en metros cuadrados."), unsafe_allow_html=True)
+        st.markdown(create_tooltip("Terreno (m²)", 
+                                 "Ingrese el área total del terreno en metros cuadrados."), 
+                   unsafe_allow_html=True)
         terreno = st.number_input("", min_value=0, step=1, format="%d", key="terreno")
 
     with col2:
-        st.markdown(create_tooltip("Construcción (m²)", "Ingrese el área construida en metros cuadrados."), unsafe_allow_html=True)
+        st.markdown(create_tooltip("Construcción (m²)", 
+                                 "Ingrese el área construida en metros cuadrados."), 
+                   unsafe_allow_html=True)
         construccion = st.number_input("", min_value=0, step=1, format="%d", key="construccion")
 
     with col3:
-        st.markdown(create_tooltip("Habitaciones", "Ingrese el número total de habitaciones."), unsafe_allow_html=True)
+        st.markdown(create_tooltip("Habitaciones", 
+                                 "Ingrese el número total de habitaciones."), 
+                   unsafe_allow_html=True)
         habitaciones = st.number_input("", min_value=0, step=1, format="%d", key="habitaciones")
 
     with col4:
-        st.markdown(create_tooltip("Baños", "Ingrese el número de baños (puede usar decimales, ej. 2.5 para dos baños completos y un medio baño)."), unsafe_allow_html=True)
+        st.markdown(create_tooltip("Baños", 
+                                 "Ingrese el número de baños."), 
+                   unsafe_allow_html=True)
         banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
 
     # Información personal
+    st.subheader("Información de Contacto")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -361,15 +279,18 @@ with st.container():
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown(create_tooltip("Correo Electrónico", "Ingrese su dirección de correo electrónico."), unsafe_allow_html=True)
+        st.markdown(create_tooltip("Correo Electrónico", 
+                                 "Ingrese su dirección de correo electrónico."), 
+                   unsafe_allow_html=True)
         correo = st.text_input("", key="correo", placeholder="usuario@ejemplo.com")
 
     with col2:
-        st.markdown(create_tooltip("Teléfono", "Ingrese su número de teléfono."), unsafe_allow_html=True)
+        st.markdown(create_tooltip("Teléfono", "Ingrese su número de teléfono."), 
+                   unsafe_allow_html=True)
         telefono = st.text_input("", key="telefono", placeholder="9214447277")
         
-    # Nuevo campo: Interés en vender
-    st.markdown(create_tooltip("Interés en Vender/Alquilar", "Seleccione su nivel de interés en vender o alquilar la propiedad."), unsafe_allow_html=True)
+    # Interés en vender
+    st.subheader("Nivel de Interés")
     interes_venta = st.radio(
         "",
         [
@@ -383,61 +304,53 @@ with st.container():
     )
 
     # Botón de cálculo
+    st.markdown("---")
     texto_boton = "Estimar Valor" if tipo_propiedad == "Casa" else "Estimar Renta"
-    if st.button(texto_boton, key="boton_calcular"):
-        logger.debug(f"Botón presionado: {texto_boton}")
+    if st.button(texto_boton, key="boton_calcular", type="primary"):
         if not nombre or not apellido:
             st.error("Por favor, ingrese su nombre y apellido.")
         elif not validar_correo(correo):
-            logger.warning(f"Correo electrónico inválido: {correo}")
             st.error("Por favor, ingrese una dirección de correo electrónico válida.")
         elif not validar_telefono(telefono):
-            logger.warning(f"Teléfono inválido: {telefono}")
             st.error("Por favor, ingrese un número de teléfono válido.")
         elif not interes_venta:
-            st.error("Por favor, seleccione su nivel de interés en vender/alquilar.")
+            st.error("Por favor, seleccione su nivel de interés.")
         elif latitud and longitud and terreno and construccion and habitaciones and banos:
-            logger.debug("Todos los campos requeridos están completos")
-            
-            datos_procesados = preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos)
-            if datos_procesados is not None:
-                precio, precio_min, precio_max = predecir_precio(datos_procesados, modelos)
-                if precio is not None:
-                    if tipo_propiedad == "Casa":
-                        st.markdown(f"<h3 style='color: {SECONDARY_COLOR};'>Valor Estimado: ${precio:,}</h3>", unsafe_allow_html=True)
-                        st.markdown(f"<p style='color: {TEXT_COLOR};'>Rango de Precio Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
+            with st.spinner('Calculando...'):
+                datos_procesados = preprocesar_datos(latitud, longitud, terreno, construccion, 
+                                                   habitaciones, banos, modelos)
+                if datos_procesados is not None:
+                    precio, precio_min, precio_max = predecir_precio(datos_procesados, modelos)
+                    if precio is not None:
+                        st.markdown("### Resultados")
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            resultado_texto = "Valor Estimado" if tipo_propiedad == "Casa" else "Renta Mensual Estimada"
+                            st.metric(resultado_texto, f"${precio:,}")
+                            
+                        with col2:
+                            st.write("Rango Estimado:")
+                            st.write(f"Mínimo: ${precio_min:,}")
+                            st.write(f"Máximo: ${precio_max:,}")
+
+                        fig = go.Figure(go.Bar(
+                            x=['Mínimo', 'Estimado', 'Máximo'],
+                            y=[precio_min, precio, precio_max],
+                            text=[f'${x:,}' for x in [precio_min, precio, precio_max]],
+                            textposition='auto',
+                            marker_color=[SECONDARY_COLOR, PRIMARY_COLOR, SECONDARY_COLOR]
+                        ))
+                        
+                        fig.update_layout(
+                            title='Rango de Precio',
+                            yaxis_title='Precio (MXN)',
+                            showlegend=False
+                        )
+                        st.plotly_chart(fig)
                     else:
-                        st.markdown(f"<h3 style='color: {SECONDARY_COLOR};'>Renta Mensual Estimada: ${precio:,}</h3>", unsafe_allow_html=True)
-                        st.markdown(f"<p style='color: {TEXT_COLOR};'>Rango de Renta Estimado: ${precio_min:,} - ${precio_max:,}</p>", unsafe_allow_html=True)
-
-                    # Gráfico de barras para visualizar el rango de precios
-                    fig = go.Figure(go.Bar(
-                        x=['Precio Mínimo', 'Precio Estimado', 'Precio Máximo'],
-                        y=[precio_min, precio, precio_max],
-                        text=[f'${precio_min:,}', f'${precio:,}', f'${precio_max:,}'],
-                        textposition='auto',
-                        marker_color=[SECONDARY_COLOR, PRIMARY_COLOR, SECONDARY_COLOR]
-                    ))
-                    fig.update_layout(
-                        title_text='Rango de Precio Estimado',
-                        font=dict(family="Arial", color=TEXT_COLOR),
-                        paper_bgcolor=BACKGROUND_COLOR,
-                        plot_bgcolor=BACKGROUND_COLOR,
-                        xaxis=dict(tickfont=dict(color=TEXT_COLOR)),
-                        yaxis=dict(tickfont=dict(color=TEXT_COLOR))
-                    )
-                    st.plotly_chart(fig)
-
-                    # Mostrar el nivel de interés seleccionado
-                    st.markdown(f"<p style='color: {TEXT_COLOR};'>Nivel de interés: {interes_venta}</p>", unsafe_allow_html=True)
+                        st.error("Error al calcular el precio. Por favor, intente nuevamente.")
                 else:
-                    logger.error("Error predicting the price")
-                    st.error("Hubo un error al calcular el precio. Por favor, inténtelo de nuevo.")
-            else:
-                logger.error("Error preprocessing the data")
-                st.error("Hubo un error al procesar los datos. Por favor, inténtelo de nuevo.")
+                    st.error("Error al procesar los datos. Por favor, verifique la información ingresada.")
         else:
-            logger.warning("Incomplete fields")
-            st.error("Por favor, asegúrese de ingresar una dirección válida y completar todos los campos.")
-
-    st.markdown('</div>', unsafe_allow_html=True)
+            st.error("Por favor, complete todos los campos y asegúrese de ingresar una dirección válida.")
