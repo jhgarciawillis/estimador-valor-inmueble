@@ -11,6 +11,9 @@ import folium
 from streamlit_folium import folium_static
 import re
 import logging
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -62,6 +65,56 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Google Sheets Functions
+def get_google_sheets_service():
+    credentials = service_account.Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=['https://www.googleapis.com/auth/spreadsheets']
+    )
+    return build('sheets', 'v4', credentials=credentials)
+
+def save_to_sheets(data):
+    try:
+        service = get_google_sheets_service()
+        spreadsheet_id = st.secrets["spreadsheet"]["id"]
+        sheet_name = st.secrets["spreadsheet"]["sheet_name"]
+        range_name = f"{sheet_name}!A:L"
+        
+        # Format timestamp
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Prepare data row
+        row = [[
+            timestamp,
+            data['tipo_propiedad'],
+            data['direccion'],
+            data['terreno'],
+            data['construccion'],
+            data['habitaciones'],
+            data['banos'],
+            data['nombre'],
+            data['correo'],
+            data['telefono'],
+            data['interes_venta'],
+            data['precio_estimado']
+        ]]
+        
+        body = {'values': row}
+        
+        service.spreadsheets().values().append(
+            spreadsheetId=spreadsheet_id,
+            range=range_name,
+            valueInputOption='RAW',
+            insertDataOption='INSERT_ROWS',
+            body=body
+        ).execute()
+        
+        logger.debug("Data successfully saved to Google Sheets")
+        return True
+    except Exception as e:
+        logger.error(f"Error saving to Google Sheets: {str(e)}")
+        return False
 
 # Utility functions
 def create_tooltip(label, explanation):
@@ -219,7 +272,7 @@ with st.container():
                      placeholder="Calle Principal 123, Ciudad de México", 
                      on_change=on_address_change)
 
-# Geocodificación y mapa
+    # Geocodificación y mapa
     latitud, longitud = None, None
     if st.session_state.direccion_seleccionada:
         latitud, longitud, ubicacion = geocodificar_direccion(st.session_state.direccion_seleccionada)
@@ -264,7 +317,7 @@ with st.container():
                    unsafe_allow_html=True)
         banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
 
-    # Información personal
+# Información personal
     st.subheader("Información de Contacto")
     col1, col2 = st.columns(2)
 
@@ -322,6 +375,25 @@ with st.container():
                 if datos_procesados is not None:
                     precio, precio_min, precio_max = predecir_precio(datos_procesados, modelos)
                     if precio is not None:
+                        # Save to Google Sheets
+                        data = {
+                            'tipo_propiedad': tipo_propiedad,
+                            'direccion': st.session_state.direccion_seleccionada,
+                            'terreno': terreno,
+                            'construccion': construccion,
+                            'habitaciones': habitaciones,
+                            'banos': banos,
+                            'nombre': nombre,
+                            'correo': correo,
+                            'telefono': telefono,
+                            'interes_venta': interes_venta,
+                            'precio_estimado': precio
+                        }
+                        
+                        # Save data silently (don't show errors to users)
+                        save_to_sheets(data)
+                        
+                        # Display results
                         st.markdown("### Resultados")
                         col1, col2 = st.columns(2)
                         
