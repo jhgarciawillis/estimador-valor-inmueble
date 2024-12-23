@@ -169,13 +169,19 @@ def geocodificar_direccion(direccion):
 
 def obtener_sugerencias_direccion(consulta):
     logger.debug(f"Obteniendo sugerencias para: {consulta}")
+    if len(consulta) < 3:  # Only search if user has typed at least 3 characters
+        return []
     try:
         ubicaciones = geolocalizador.geocode(consulta + ", México", exactly_one=False, limit=5)
         if ubicaciones:
             return [ubicacion.address for ubicacion in ubicaciones]
+        return []
     except (GeocoderTimedOut, GeocoderUnavailable):
         logger.warning("Servicio de geocodificación no disponible")
-    return []
+        return []
+    except Exception as e:
+        logger.error(f"Error al obtener sugerencias: {str(e)}")
+        return []
 
 def agregar_caracteristica_grupo(latitud, longitud, modelos):
     logger.debug(f"Agregando característica de grupo para: {latitud}, {longitud}")
@@ -233,18 +239,9 @@ def validar_telefono(telefono):
     patron = r'^\+?[1-9]\d{1,14}$'
     return re.match(patron, telefono) is not None
 
-def on_address_change():
-    st.session_state.sugerencias = obtener_sugerencias_direccion(st.session_state.entrada_direccion)
-    if st.session_state.sugerencias:
-        st.session_state.direccion_seleccionada = st.session_state.sugerencias[0]
-    else:
-        st.session_state.direccion_seleccionada = ""
-
 # Initialize session state
 if 'entrada_direccion' not in st.session_state:
     st.session_state.entrada_direccion = ""
-if 'sugerencias' not in st.session_state:
-    st.session_state.sugerencias = []
 if 'direccion_seleccionada' not in st.session_state:
     st.session_state.direccion_seleccionada = ""
 if 'mostrar_mapa' not in st.session_state:
@@ -268,11 +265,31 @@ with st.container():
         st.markdown(create_tooltip("Dirección de la Propiedad", 
                                  "Ingrese la dirección completa de la propiedad."), 
                    unsafe_allow_html=True)
-        st.text_input("", key="entrada_direccion", 
-                     placeholder="Calle Principal 123, Ciudad de México", 
-                     on_change=on_address_change)
+        
+        # Text input for address
+        entrada_direccion = st.text_input(
+            "", 
+            key="entrada_direccion",
+            placeholder="Comience a escribir la dirección...",
+        )
+        
+        # Get suggestions when user types
+        if entrada_direccion:
+            sugerencias = obtener_sugerencias_direccion(entrada_direccion)
+            if sugerencias:
+                direccion_seleccionada = st.selectbox(
+                    "Seleccione la dirección correcta:",
+                    options=sugerencias,
+                    key="direccion_seleccionada"
+                )
+                st.session_state.direccion_seleccionada = direccion_seleccionada
+            else:
+                st.warning("No se encontraron direcciones. Intente ser más específico.")
+                st.session_state.direccion_seleccionada = ""
+        else:
+            st.session_state.direccion_seleccionada = ""
 
-    # Geocodificación y mapa
+# Geocodificación y mapa
     latitud, longitud = None, None
     if st.session_state.direccion_seleccionada:
         latitud, longitud, ubicacion = geocodificar_direccion(st.session_state.direccion_seleccionada)
@@ -317,7 +334,7 @@ with st.container():
                    unsafe_allow_html=True)
         banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
 
-# Información personal
+    # Información personal
     st.subheader("Información de Contacto")
     col1, col2 = st.columns(2)
 
@@ -390,7 +407,7 @@ with st.container():
                             'precio_estimado': precio
                         }
                         
-                        # Save data silently (don't show errors to users)
+                        # Save data silently
                         save_to_sheets(data)
                         
                         # Display results
