@@ -249,7 +249,9 @@ if 'direccion_seleccionada' not in st.session_state:
     st.session_state.direccion_seleccionada = ""
 if 'mostrar_mapa' not in st.session_state:
     st.session_state.mostrar_mapa = False
-
+if 'last_input' not in st.session_state:
+    st.session_state.last_input = ""
+    
 # Main UI
 st.title("Estimador de Valor de Propiedades")
 
@@ -268,9 +270,27 @@ with st.container():
         st.markdown(create_tooltip("Dirección de la Propiedad", 
                                  "Ingrese la dirección completa de la propiedad."), 
                    unsafe_allow_html=True)
-        st.text_input("", key="entrada_direccion", 
-                     placeholder="Calle Principal 123, Ciudad de México", 
-                     on_change=on_address_change)
+        
+        # Text input for address with debouncing
+        current_input = st.text_input("", 
+                                    key="entrada_direccion",
+                                    placeholder="Calle Principal 123, Ciudad de México")
+        
+        # Check if input has changed and has at least 3 characters
+        if current_input != st.session_state.last_input and len(current_input) >= 3:
+            st.session_state.last_input = current_input
+            st.session_state.sugerencias = obtener_sugerencias_direccion(current_input)
+            
+        # Dropdown for suggestions - show immediately if we have suggestions
+        if st.session_state.sugerencias:
+            direccion_seleccionada = st.selectbox(
+                "Sugerencias de direcciones:",
+                options=st.session_state.sugerencias,
+                key="direccion_dropdown",
+                label_visibility="collapsed"
+            )
+            if direccion_seleccionada:
+                st.session_state.direccion_seleccionada = direccion_seleccionada
 
     # Geocodificación y mapa
     latitud, longitud = None, None
@@ -317,7 +337,7 @@ with st.container():
                    unsafe_allow_html=True)
         banos = st.number_input("", min_value=0.0, step=0.5, format="%.1f", key="banos")
 
-# Información personal
+    # Información personal
     st.subheader("Información de Contacto")
     col1, col2 = st.columns(2)
 
