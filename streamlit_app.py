@@ -143,8 +143,10 @@ def cargar_modelos(tipo_propiedad):
     try:
         for nombre_modelo, nombre_archivo in modelos_requeridos.items():
             ruta_archivo = os.path.join(directorio_actual, f"{prefijo}{nombre_archivo}")
+            logger.debug(f"Intentando cargar archivo: {ruta_archivo}")
             if os.path.exists(ruta_archivo):
                 modelos[nombre_modelo] = joblib.load(ruta_archivo)
+                logger.debug(f"Archivo cargado exitosamente: {ruta_archivo}")
             else:
                 logger.error(f"Archivo de modelo no encontrado: {ruta_archivo}")
                 raise FileNotFoundError(f"Archivo de modelo no encontrado: {ruta_archivo}")
@@ -188,20 +190,24 @@ def agregar_caracteristica_grupo(latitud, longitud, modelos):
         return None
 
 def preprocesar_datos(latitud, longitud, terreno, construccion, habitaciones, banos, modelos):
-    logger.debug("Preprocesando datos")
+    logger.debug(f"Preprocesando datos para tipo: {st.session_state.tipo_propiedad}")
     try:
         grupo_ubicacion = agregar_caracteristica_grupo(latitud, longitud, modelos)
         
         datos_entrada = pd.DataFrame({
-            'Terreno': [terreno],
-            'Construccion': [construccion],
-            'Habitaciones': [habitaciones],
-            'Banos': [banos],
-            'GrupoUbicacion': [grupo_ubicacion],
+            'Terreno': [float(terreno)],
+            'Construccion': [float(construccion)],
+            'Habitaciones': [float(habitaciones)],
+            'Banos': [float(banos)],
+            'GrupoUbicacion': [float(grupo_ubicacion)],
         })
         
+        logger.debug(f"Datos de entrada: {datos_entrada}")
         datos_imputados = modelos['imputador'].transform(datos_entrada)
+        logger.debug(f"Datos imputados: {datos_imputados}")
         datos_escalados = modelos['escalador'].transform(datos_imputados)
+        logger.debug(f"Datos escalados: {datos_escalados}")
+        
         return pd.DataFrame(datos_escalados, columns=datos_entrada.columns)
     except Exception as e:
         logger.error(f"Error al preprocesar datos: {str(e)}")
@@ -211,8 +217,13 @@ def predecir_precio(datos_procesados, modelos):
     logger.debug("Prediciendo precio")
     try:
         precio_bruto = modelos['modelo'].predict(datos_procesados)[0]
-        precio_ajustado = precio_bruto
-        precio_redondeado = math.floor((precio_ajustado * .63) / 1000) * 1000
+        logger.debug(f"Precio bruto predicho: {precio_bruto}")
+        
+        # Remove the fixed scaling factor and apply different logic based on property type
+        if st.session_state.tipo_propiedad == "Casa":
+            precio_redondeado = math.floor(precio_bruto / 1000) * 1000
+        else:  # Departamento
+            precio_redondeado = math.floor(precio_bruto / 100) * 100
 
         factor_escala_bajo = math.exp(-0.05)
         factor_escala_alto = math.exp(0.01 * math.log(precio_redondeado / 1000 + 1))
@@ -220,6 +231,7 @@ def predecir_precio(datos_procesados, modelos):
         rango_precio_min = max(0, math.floor((precio_redondeado * factor_escala_bajo) / 1000) * 1000)
         rango_precio_max = math.ceil((precio_redondeado * factor_escala_alto) / 1000) * 1000
 
+        logger.debug(f"Precio final calculado: {precio_redondeado}")
         return precio_redondeado, rango_precio_min, rango_precio_max
     except Exception as e:
         logger.error(f"Error al predecir el precio: {str(e)}")
